@@ -1,8 +1,12 @@
 const WebSocket = require('ws');
-const PORT = process.env.PORT || 7993
+const express = require('express');
+const path = require('path');
 
-const wss = new WebSocket.Server({ port: PORT });
+const ROUTER_PORT = process.env.ROUTER_PORT || 7993 // TODO configure
+const CLIENT_PORT = process.env.CLIENT_PORT || 8080 // TODO configure
 
+// Start the router service
+const wss = new WebSocket.Server({ port: ROUTER_PORT });
 // Broadcast all messages to everyone else.
 wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(data) {
@@ -15,4 +19,13 @@ wss.on('connection', function connection(ws) {
   });
 });
 
-console.log('Listening...')
+// Serve the client app.
+var www = express();
+www.get('/', function (req, res) {
+  res.sendFile('./client/client.html', { root: __dirname });
+})
+www.use(express.static(path.join(__dirname, './client')));
+www.listen(CLIENT_PORT);
+
+// Ready
+console.log('Started...')
