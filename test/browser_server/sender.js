@@ -23,16 +23,13 @@ async function connect() {
 
   // Ready connections.
   await readyScreen(FRAME_RATE);
-  await readyPointer();
 
   // Initialise the signal message handlers.
   router.onmessage = async (event) => {
-    console.log(event.data);
     const msg = JSON.parse(event.data);
 
-    // Screen stream negotiation.
+    // Screen stream.
     if (msg.stream == 'screen') {
-
       if (msg.type == 'request') {
         screen = new PeerStream('screen', router, RTC_CONF);
         attachScreen(screen.connection);
@@ -42,9 +39,8 @@ async function connect() {
       }
     }
 
-    // Pointer stream negotiation.
+    // Pointer stream.
     if (msg.stream == 'pointer') {
-
       if (msg.type == 'request') {
         pointer = new PeerStream('pointer', router, RTC_CONF);
         attachPointer(pointer.connection);
@@ -52,7 +48,6 @@ async function connect() {
       else {
         pointer.handleMessage(msg);
       }
-
     }
   }
 
@@ -66,8 +61,6 @@ async function connect() {
 document.querySelector('#start').onclick = connect;
 
 
-
-
 /**
  * ******************
  * Pointer Connection
@@ -79,25 +72,97 @@ var pointerConn;
 var pointerStream;
 
 /**
- * Prepare pointer to receive.
- */
-async function readyPointer() {
-
-
-}
-
-/**
  * Attach the virtual pointer for incoming events.
  */
 function attachPointer(connection) {
+  const canvas = document.querySelector('#canvas');
+  // Virtual Mouse Parameters
+  var xPos = 0;
+  var yPos = 0;
+  var xMov = 0;
+  var yMov = 0;
+  var btn1 = 0;
+  var btn2 = 0;
+  var btn3 = 0;
+  // Listen to mouse events and dispay virtual mouse.
   pointerStream = connection.createDataChannel("pointer");
   pointerStream.onmessage = (message) => {
-    console.log(message.data);
-  }; // TODO
+    const data = JSON.parse(message.data);
+
+    /**
+     * Handle pointer events.
+     */
+    if (data.type == 'motion-warp') {
+      xPos = data.xPos;
+      yPos = data.yPos;
+      xMov = 0;
+      yMov = 0;
+    }
+    else if (data.type == 'motion-move') {
+      // Update position
+      xPos += data.xMov;
+      yPos += data.yMov;
+      // Snap position to valid range
+      xPos = Math.min(1, Math.max(0, xPos));
+      yPos = Math.min(1, Math.max(0, yPos));
+      // Update movement
+      xMov = data.xMov;
+      yMov = data.yMov;
+    }
+    else if (data.type == 'button-down') {
+      if (data.button == 0) btn1 = 1;
+      if (data.button == 1) btn2 = 1;
+      if (data.button == 2) btn3 = 1;
+    }
+    else if (data.type == 'button-up') {
+      if (data.button == 0) btn1 = 0;
+      if (data.button == 1) btn2 = 0;
+      if (data.button == 2) btn3 = 0;
+    }
+
+    /**
+     * Draw virtual pointer.
+     */
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 3;
+    // Pointer movement shadow.
+    ctx.strokeStyle = 'red';
+    ctx.beginPath();
+    ctx.arc((xPos-xMov)*canvas.clientWidth, (yPos-yMov)*canvas.clientHeight,
+      5, 0, 2*Math.PI);
+    ctx.stroke(); 
+    // Pointer position.
+    ctx.strokeStyle = 'lightgreen';
+    ctx.beginPath();
+    ctx.arc(xPos*canvas.clientWidth, yPos*canvas.clientHeight,
+      5, 0, 2*Math.PI);
+    ctx.stroke();
+    // Pointer buttons.
+    ctx.strokeStyle = 'black';
+    // Left
+    if (btn1) {
+      ctx.beginPath();
+      ctx.arc(xPos*canvas.clientWidth, yPos*canvas.clientHeight,
+        5, 3/4*Math.PI, 5/4*Math.PI);
+      ctx.stroke();
+    }
+    // Middle
+    if (btn2) {
+      ctx.beginPath();
+      ctx.arc(xPos*canvas.clientWidth, yPos*canvas.clientHeight,
+        5, 5/4*Math.PI, 7/4*Math.PI);
+      ctx.stroke();
+    }
+    // Right
+    if (btn3) {
+      ctx.beginPath();
+      ctx.arc(xPos*canvas.clientWidth, yPos*canvas.clientHeight,
+        5, 7/4*Math.PI, 9/4*Math.PI);
+      ctx.stroke();
+    }
+  };
 }
-
-
-
 
 
 /**
@@ -185,7 +250,6 @@ class PeerStream {
    * Respond to client messages.
    */
   async handleMessage(msg) {
-
     // Store any sent remote ice candidates.
     if (msg.type == 'ice_candidate') {
       this.connection.addIceCandidate(msg.payload || {});

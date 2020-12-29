@@ -5,17 +5,37 @@
         <title>REMOVID TEST SENDER</title>
         <style>
             #display {
-              object-fit: contain;
-              background: #000000;
-              width: 80%;
-              height: 80%;
+                object-fit: contain;
+                background: #000000;
+                width: 80%;
+                height: 80%;
+            }
+            #canvas {
+                position: absolute;
+                background-color:rgba(0,0,0,0);
+                z-index: 10;
             }
         </style>
     </head>
-    <body>
+    <body onresize="resizeCanvas()">
         <button id="start">Start</button>
-        <video id="display" autoplay></video>
+        <video id="display" onplay="resizeCanvas()" autoplay></video>
+        <canvas id="canvas"></canvas>
         <script src="sender.js"></script>
+
+        <script>
+            /**
+             * Snap draw canvas over video (for pointer display)
+             */
+            function resizeCanvas() {
+                const video = document.getElementById("display");
+                const canvas = document.getElementById("canvas");
+                canvas.style.left = video.offsetLeft + 'px';
+                canvas.style.top = video.offsetTop + 'px';
+                canvas.width = video.offsetWidth;
+                canvas.height = video.offsetHeight;
+            }
+            </script>
     </body>
 </html>
 
