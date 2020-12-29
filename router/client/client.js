@@ -1,6 +1,8 @@
 import * as peerstream from './peerstream.js';
 import * as clientscreen from './clientscreen.js';
 import * as clientpointer from './clientpointer.js';
+import * as clientkeyboard from './clientkeyboard.js';
+
 
 const RTC_CONF = {iceServers: [{urls: 'stun:stun.example.org'}]}; //TODO config
 const ROUTER = 'ws://localhost:7993'; //TODO config
@@ -22,11 +24,14 @@ async function connect() {
   // Ready connections.
   const screen = new peerstream.PeerStream('screen', router, RTC_CONF);
   const pointer = new peerstream.PeerStream('pointer', router, RTC_CONF);
+  const keyboard = new peerstream.PeerStream('keyboard', router, RTC_CONF);
   clientscreen.attachScreen(screen.connection, display);
   clientpointer.attachPointer(pointer.connection, display);
+  clientkeyboard.attachKeyboard(keyboard.connection, display);
   var requestConnection = () => {
     screen.request();
     pointer.request();
+    keyboard.request();
   };
 
   // Handle signalling server messages (router).
@@ -47,6 +52,9 @@ async function connect() {
           break;
         case 'pointer':
           pointer.handleMessage(msg);
+          break;
+        case 'keyboard':
+          keyboard.handleMessage(msg);
           break;
       }
     }

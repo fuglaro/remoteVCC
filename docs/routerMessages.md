@@ -3,7 +3,7 @@
 
 Communication protocol for negotiating and establishing the data streams between the client and server. This is communicated via the signalling server (router).
 
-This protocol is considered simple enough to avoid adopting an external protocol.
+This protocol is considered simple enough to avoid adopting an external protocol.x
 
 ## Establishing Any Data Stream
 

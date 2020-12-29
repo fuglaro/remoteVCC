@@ -14,6 +14,22 @@ async function attachPointer(connection, canvas) {
       // TODO: scrolling
 
       /**
+       * Reset all buttons to "up" on focus and unfocus.
+       **/
+      const releaseAllButtons = (event) => {
+        var timestamp = Date.now();
+
+        dataChannel.send(JSON.stringify({
+          type: 'release-all-buttons',
+          time: timestamp
+        }));
+      }
+      document.addEventListener('pointerlockchange', releaseAllButtons);
+      canvas.addEventListener('focusin', releaseAllButtons);
+      canvas.addEventListener('focusout', releaseAllButtons);
+
+
+      /**
        * Mouse movement (warp).
        * Repositioning of the pointer.
        */

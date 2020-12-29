@@ -10,6 +10,7 @@ var router;
 
 var screen;
 var pointer;
+var keyboard;
 
 
 /**
@@ -28,17 +29,6 @@ async function connect() {
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
 
-    // Screen stream.
-    if (msg.stream == 'screen') {
-      if (msg.type == 'request') {
-        screen = new PeerStream('screen', router, RTC_CONF);
-        attachScreen(screen.connection);
-      }
-      else {
-        screen.handleMessage(msg);
-      }
-    }
-
     // Pointer stream.
     if (msg.stream == 'pointer') {
       if (msg.type == 'request') {
@@ -47,6 +37,28 @@ async function connect() {
       }
       else {
         pointer.handleMessage(msg);
+      }
+    }
+
+    // Keyboard stream.
+    if (msg.stream == 'keyboard') {
+      if (msg.type == 'request') {
+        keyboard = new PeerStream('keyboard', router, RTC_CONF);
+        attachKeyboard(keyboard.connection);
+      }
+      else {
+        keyboard.handleMessage(msg);
+      }
+    }
+
+    // Screen stream.
+    if (msg.stream == 'screen') {
+      if (msg.type == 'request') {
+        screen = new PeerStream('screen', router, RTC_CONF);
+        attachScreen(screen.connection);
+      }
+      else {
+        screen.handleMessage(msg);
       }
     }
   }
@@ -68,7 +80,6 @@ document.querySelector('#start').onclick = connect;
  */
 
 // Stream connection to the client for recieving the pointer.
-var pointerConn;
 var pointerStream;
 
 /**
@@ -119,6 +130,11 @@ function attachPointer(connection) {
       if (data.button == 1) btn2 = 0;
       if (data.button == 2) btn3 = 0;
     }
+    else if (data.type == 'release-all-buttons') {
+      btn1 = 0;
+      btn2 = 0;
+      btn3 = 0;
+    }
 
     /**
      * Draw virtual pointer.
@@ -161,6 +177,50 @@ function attachPointer(connection) {
         5, 7/4*Math.PI, 9/4*Math.PI);
       ctx.stroke();
     }
+  };
+}
+
+
+/**
+ * ******************
+ * Keyboard Connection
+ * ******************
+ */
+
+// Stream connection to the client for recieving the keyboard.
+var keyboardStream;
+
+/**
+ * Attach the virtual keyboard for incoming events.
+ */
+function attachKeyboard(connection) {
+  const keyLabel = document.querySelector('#keys');
+  // Virtual Keyboard Parameters
+  let keysDown = new Set();
+  
+  // TODO
+
+
+  // Listen to mouse events and dispay virtual mouse.
+  keyboardStream = connection.createDataChannel("keyboard");
+  keyboardStream.onmessage = (message) => {
+    const data = JSON.parse(message.data);
+
+    /**
+     * Handle keyboard events.
+     */
+    if (data.type == 'key-down') {
+      keysDown.add(data.code);
+    }
+    else if (data.type == 'key-up') {
+      keysDown.delete(data.code);
+    }
+    else if (data.type == 'release-all-keys') {
+      keysDown.clear();
+    }
+
+    // Display pressed keys on the virtual keyboard
+    keyLabel.innerHTML = Array.from(keysDown).join(' ');
   };
 }
 
