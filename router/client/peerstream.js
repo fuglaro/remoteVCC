@@ -32,6 +32,7 @@ class PeerStream {
   * Ask the server to establish the connection.
   */
   async request() {
+    // Send request to re-establish connection.
     this.router.send(JSON.stringify({
       type: 'request',
       stream: this.streamName

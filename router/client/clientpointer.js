@@ -11,8 +11,6 @@ async function attachPointer(connection, canvas) {
 
     dataChannel.onopen = (event) => {
 
-      // TODO: scrolling
-
       /**
        * Reset all buttons to "up" on focus and unfocus.
        **/
@@ -42,29 +40,22 @@ async function attachPointer(connection, canvas) {
         // element. Ideally the resulting video display
         // positions could be retrieved.
         // (0-1 from top left)
-        const vw = display.videoWidth;
-        const vh = display.videoHeight;
         const cw = display.clientWidth;
         const ch = display.clientHeight;
-        const ox = e.offsetX;
-        const oy = e.offsetY;
-        const va = vw / vh;
-        const ca = cw / ch;
+        const videoAspect = display.videoWidth / display.videoHeight;
         // Real visual width and height of the video (after auto-sizing)
-        var rw;
-        var rh;
-        if (va > ca) {
+        var rw = cw;
+        var rh = ch;
+        if (videoAspect > cw / ch) {
           // Video is width constrained.
-          rw = cw;
-          rh = cw / va;
-          var xPos = ox / cw;
-          var yPos = (oy - ((ch - rh) / 2)) / rh;
+          rh = cw / videoAspect;
+          var xPos = e.offsetX / cw;
+          var yPos = (e.offsetY - ((ch - rh) / 2)) / rh;
         } else {
           // Video is height constrained.
-          rw = ch * va;
-          rh = ch;
-          var xPos = (ox - ((cw - rw) / 2)) / rw;
-          var yPos = oy / ch;
+          rw = ch * videoAspect;
+          var xPos = (e.offsetX - ((cw - rw) / 2)) / rw;
+          var yPos = e.offsetY / ch;
         }
       
         // Get the mouse movement relative to the display.
@@ -126,6 +117,54 @@ async function attachPointer(connection, canvas) {
           type: 'button-up',
           time: timestamp,
           button: e.button
+        }));
+      });
+
+
+      /**
+       * Mouse wheel.
+       * A scroll wheel movement occurred.
+       */
+      canvas.addEventListener('wheel', e => {
+        var timestamp = Date.now();
+
+        // Ignore page wheels.
+        if (e.deltaMode == 2) return;
+
+        var x = e.deltaX;
+        var y = e.deltaY;
+        var z = e.deltaZ;
+
+        // Pixel steps are sent relative to the screen size.
+        if (e.deltaMode == 0) {
+          // Calulate the real video side in the client display
+          const cw = display.clientWidth;
+          const ch = display.clientHeight;
+          const videoAspect = display.videoWidth / display.videoHeight;
+          // Real visual width and height of the video (after auto-sizing)
+          var realWidth = cw;
+          var realHeight = ch;
+          if (videoAspect > cw / ch) {
+            // Video is width constrained.
+            realHeight = cw / videoAspect;
+          } else {
+            // Video is height constrained.
+            realWidth = ch * videoAspect;
+          }
+          // Now adjust the pixel proportions.
+          x = x / realWidth;
+          y = y / realHeight;
+          z = z / ((realWidth + realHeight) / 2)
+        }
+
+        // Send the wheel movement information.
+        dataChannel.send(JSON.stringify({
+          type: 'wheel',
+          time: timestamp,
+          step: ((e.deltaMode == 0) ? 'pixels' : 'lines'),
+          x: x,
+          y: y,
+          z: z
         }));
       });
     };

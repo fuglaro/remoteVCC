@@ -1,7 +1,6 @@
 
-const RTC_CONF = {iceServers: [{urls: 'stun:stun.example.org'}]}; // TODO config
-const ROUTER = 'ws://localhost:7993'; // TODO config
-const FRAME_RATE = 30; // TODO config
+const RTC_CONF = {iceServers: [{urls: 'stun:stun.example.org'}]};
+const FRAME_RATE = 30;
 
 
 // Signalling server for connection negotiation.
@@ -20,10 +19,8 @@ var keyboard;
  */
 async function connect() {
   // Connect up the the signalling server.
-  router = new WebSocket(ROUTER);
-
-  // Ready connections.
-  await readyScreen(FRAME_RATE);
+  const routerURL = document.querySelector('#server').value;
+  router = new WebSocket(routerURL);
 
   // Initialise the signal message handlers.
   router.onmessage = async (event) => {
@@ -63,12 +60,13 @@ async function connect() {
     }
   }
 
+  // Ready connections.
+  await readyScreen(FRAME_RATE);
+
   // Send "server-alive" ping in case any client has been waiting.
-  router.onopen = async ({event}) => {
-    router.send(JSON.stringify({
-      type: 'server-alive'
-    }));
-  }
+  router.send(JSON.stringify({
+    type: 'server-alive'
+  }));
 }
 document.querySelector('#start').onclick = connect;
 
@@ -95,6 +93,8 @@ function attachPointer(connection) {
   var btn1 = 0;
   var btn2 = 0;
   var btn3 = 0;
+  var xWheel = 0;
+  var yWheel = 0;
   // Listen to mouse events and dispay virtual mouse.
   pointerStream = connection.createDataChannel("pointer");
   pointerStream.onmessage = (message) => {
@@ -134,6 +134,18 @@ function attachPointer(connection) {
       btn1 = 0;
       btn2 = 0;
       btn3 = 0;
+    }
+    else if (data.type == 'wheel') {
+      var step = 1;
+      if (data.step == 'lines') {
+        step = 0.01;
+      }
+      // Update position
+      xWheel += data.x * step;
+      yWheel -= data.y * step;
+      // Snap position to valid range
+      xWheel = Math.min(1, Math.max(0, xWheel));
+      yWheel = Math.min(1, Math.max(0, yWheel));
     }
 
     /**
@@ -177,6 +189,12 @@ function attachPointer(connection) {
         5, 7/4*Math.PI, 9/4*Math.PI);
       ctx.stroke();
     }
+    // Wheel position.
+    ctx.strokeStyle = 'blue';
+    ctx.beginPath();
+    ctx.arc(xWheel*canvas.clientWidth, yWheel*canvas.clientHeight,
+      5, 0, 2*Math.PI);
+    ctx.stroke();
   };
 }
 
@@ -197,9 +215,6 @@ function attachKeyboard(connection) {
   const keyLabel = document.querySelector('#keys');
   // Virtual Keyboard Parameters
   let keysDown = new Set();
-  
-  // TODO
-
 
   // Listen to mouse events and dispay virtual mouse.
   keyboardStream = connection.createDataChannel("keyboard");

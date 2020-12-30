@@ -3,10 +3,6 @@ import * as clientscreen from './clientscreen.js';
 import * as clientpointer from './clientpointer.js';
 import * as clientkeyboard from './clientkeyboard.js';
 
-
-const RTC_CONF = {iceServers: [{urls: 'stun:stun.example.org'}]}; //TODO config
-const ROUTER = 'ws://localhost:7993'; //TODO config
-
 const display = document.querySelector('#display');
 
 // Signalling server for connection negotiation.
@@ -18,13 +14,19 @@ var router;
  * display, audio, mic, and inputs.
  */
 async function connect() {
+  // Get the RTC Configs.
+  const baseURL = `${window.location.protocol}//${window.location.host}`;
+  const RTCConfig = await fetch(`${baseURL}/rtcconfig`).then(r => r.json());
+
   // Connect up the the signalling server.
-  router = new WebSocket(ROUTER);
+  const socketProtocol = (
+    (window.location.protocol == 'http:') ? 'ws:' : 'wss:');
+  router = new WebSocket(`${socketProtocol}//${window.location.host}`);
 
   // Ready connections.
-  const screen = new peerstream.PeerStream('screen', router, RTC_CONF);
-  const pointer = new peerstream.PeerStream('pointer', router, RTC_CONF);
-  const keyboard = new peerstream.PeerStream('keyboard', router, RTC_CONF);
+  const screen = new peerstream.PeerStream('screen', router, RTCConfig);
+  const pointer = new peerstream.PeerStream('pointer', router, RTCConfig);
+  const keyboard = new peerstream.PeerStream('keyboard', router, RTCConfig);
   clientscreen.attachScreen(screen.connection, display);
   clientpointer.attachPointer(pointer.connection, display);
   clientkeyboard.attachKeyboard(keyboard.connection, display);
@@ -34,12 +36,12 @@ async function connect() {
     keyboard.request();
   };
 
-  // Handle signalling server messages (router).
+  // Ready signalling server messages (router).
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
 
-    // The server came online, connect!
-    if (msg.type == 'server_alive') {
+    // The server came online, reconnect!
+    if (msg.type == 'server-alive') {
       requestConnection();
     }
 
