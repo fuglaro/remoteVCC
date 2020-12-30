@@ -13,19 +13,19 @@
 class PeerStream {
   connection;
   streamName;
-  constructor(streamName, router, config) {
+  constructor(streamName, routerSend, config) {
     this.connection = new RTCPeerConnection(config);
     /* Ready send of ICE Candidate details. */
     this.connection.onicecandidate = ({candidate}) => {
       if (!candidate) return;
-      this.router.send(JSON.stringify({
+      this.routerSend(JSON.stringify({
         type: 'ice-candidate',
         stream: this.streamName,
         payload: candidate
       }));
     };
     this.streamName = streamName;
-    this.router = router;
+    this.routerSend = routerSend;
   }
 
   /**
@@ -33,7 +33,7 @@ class PeerStream {
   */
   async request() {
     // Send request to re-establish connection.
-    this.router.send(JSON.stringify({
+    this.routerSend(JSON.stringify({
       type: 'request',
       stream: this.streamName
     }));
@@ -47,7 +47,7 @@ class PeerStream {
       await this.connection.setRemoteDescription(msg.payload);
       await this.connection.setLocalDescription(
         await this.connection.createAnswer());
-      this.router.send(JSON.stringify({
+      this.routerSend(JSON.stringify({
         type: 'answer',
         stream: this.streamName,
         payload: this.connection.localDescription

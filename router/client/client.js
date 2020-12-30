@@ -22,49 +22,65 @@ async function connect() {
   const socketProtocol = (
     (window.location.protocol == 'http:') ? 'ws:' : 'wss:');
   router = new WebSocket(`${socketProtocol}//${window.location.host}`);
+  var routerSend = (message) => {router.send(message)};
 
-  // Ready connections.
-  const screen = new peerstream.PeerStream('screen', router, RTCConfig);
-  const pointer = new peerstream.PeerStream('pointer', router, RTCConfig);
-  const keyboard = new peerstream.PeerStream('keyboard', router, RTCConfig);
-  clientscreen.attachScreen(screen.connection, display);
-  clientpointer.attachPointer(pointer.connection, display);
-  clientkeyboard.attachKeyboard(keyboard.connection, display);
-  var requestConnection = () => {
-    screen.request();
-    pointer.request();
-    keyboard.request();
-  };
+  // Swap to a peer-to-peer signal stream to
+  // negotiate other peer-to-peer connetions.
+  const signal = new peerstream.PeerStream('signal', routerSend, RTCConfig);
+  var signalStream;
+  signal.connection.ondatachannel = (event) => {
+    signalStream = event.channel;
+    signalStream.onopen = (openEvent) => {
+      // Close the websocket connection when it is no longer needed.
+      router.close();
 
-  // Ready signalling server messages (router).
+      // Ready connections.
+      var signalSend = (message) => {signalStream.send(message)};
+      const screen = new peerstream.PeerStream('screen', signalSend, RTCConfig);
+      const pointer = new peerstream.PeerStream('pointer', signalSend, RTCConfig);
+      const keyboard = new peerstream.PeerStream('keyboard', signalSend, RTCConfig);
+      clientscreen.attachScreen(screen.connection, display);
+      clientpointer.attachPointer(pointer.connection, display);
+      clientkeyboard.attachKeyboard(keyboard.connection, display);
+
+      // Ready signalling message handling.
+      signalStream.onmessage = async (event) => {
+        const msg = JSON.parse(event.data);
+        switch (msg.stream) {
+          case 'screen':
+            screen.handleMessage(msg);
+            break;
+          case 'pointer':
+            pointer.handleMessage(msg);
+            break;
+          case 'keyboard':
+            keyboard.handleMessage(msg);
+            break;
+        }
+      };
+
+      // Establish the connections.
+      screen.request();
+      pointer.request();
+      keyboard.request();
+    }
+  }
+
+  // Ready router server messages (initial signalling).
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
-
     // The server came online, reconnect!
     if (msg.type == 'server-alive') {
-      requestConnection();
+      signal.request();
     }
-
-    // Could be a message for a stream.
-    // Distribute the messages to the appropriate stream handler.
     else {
-      switch (msg.stream) {
-        case 'screen':
-          screen.handleMessage(msg);
-          break;
-        case 'pointer':
-          pointer.handleMessage(msg);
-          break;
-        case 'keyboard':
-          keyboard.handleMessage(msg);
-          break;
-      }
+      signal.handleMessage(msg);
     }
   };
 
   // Request connection in case the server is already online.
   router.onopen = async ({event}) => {
-    requestConnection();
+    signal.request();
   };
 }
 connect();

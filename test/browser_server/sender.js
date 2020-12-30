@@ -7,6 +7,8 @@ const FRAME_RATE = 30;
 var router;
 
 
+var signal;
+var signalStream;
 var screen;
 var pointer;
 var keyboard;
@@ -21,41 +23,61 @@ async function connect() {
   // Connect up the the signalling server.
   const routerURL = document.querySelector('#server').value;
   router = new WebSocket(routerURL);
+  var routerSend = (message) => {router.send(message)};
 
   // Initialise the signal message handlers.
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
 
-    // Pointer stream.
-    if (msg.stream == 'pointer') {
+    // Signal stream.
+    if (msg.stream == 'signal') {
       if (msg.type == 'request') {
-        pointer = new PeerStream('pointer', router, RTC_CONF);
-        attachPointer(pointer.connection);
-      }
-      else {
-        pointer.handleMessage(msg);
-      }
-    }
+        // Create signal channel to create other peer-to-peer connections.
+        signal = new PeerStream('signal', routerSend, RTC_CONF);
+        signalStream = signal.connection.createDataChannel("signal");
+        // Close the websocket connection when it is no longer needed.
+        signalStream.onopen = (event) => {router.close()};
+        // Handle signal messages
+        var signalSend = (message) => {signalStream.send(message)};
+        signalStream.onmessage = (message) => {
+          const data = JSON.parse(message.data);
 
-    // Keyboard stream.
-    if (msg.stream == 'keyboard') {
-      if (msg.type == 'request') {
-        keyboard = new PeerStream('keyboard', router, RTC_CONF);
-        attachKeyboard(keyboard.connection);
-      }
-      else {
-        keyboard.handleMessage(msg);
-      }
-    }
+          // Pointer stream.
+          if (data.stream == 'pointer') {
+            if (data.type == 'request') {
+              pointer = new PeerStream('pointer', signalSend, RTC_CONF);
+              attachPointer(pointer.connection);
+            }
+            else {
+              pointer.handleMessage(data);
+            }
+          }
 
-    // Screen stream.
-    if (msg.stream == 'screen') {
-      if (msg.type == 'request') {
-        screen = new PeerStream('screen', router, RTC_CONF);
-        attachScreen(screen.connection);
+          // Keyboard stream.
+          if (data.stream == 'keyboard') {
+            if (data.type == 'request') {
+              keyboard = new PeerStream('keyboard', signalSend, RTC_CONF);
+              attachKeyboard(keyboard.connection);
+            }
+            else {
+              keyboard.handleMessage(data);
+            }
+          }
+
+          // Screen stream.
+          if (data.stream == 'screen') {
+            if (data.type == 'request') {
+              screen = new PeerStream('screen', signalSend, RTC_CONF);
+              attachScreen(screen.connection);
+            }
+            else {
+              screen.handleMessage(data);
+            }
+          }
+        }
       }
       else {
-        screen.handleMessage(msg);
+        signal.handleMessage(msg);
       }
     }
   }
@@ -292,14 +314,12 @@ function attachScreen(connection) {
  **/
 
 class PeerStream {
-  connection;
-  streamName;
-  constructor(streamName, router, config) {
+  constructor(streamName, routerSend, config) {
     this.connection = new RTCPeerConnection(config);
     // Ready the send of ICE Candidate details.
     this.connection.onicecandidate = ({candidate}) => {
       if (!candidate) return;
-      router.send(JSON.stringify({
+      routerSend(JSON.stringify({
         type: 'ice-candidate',
         stream: streamName,
         payload: candidate
@@ -310,15 +330,13 @@ class PeerStream {
       try {
         await this.connection.setLocalDescription(
           await this.connection.createOffer());
-        router.send(JSON.stringify({
+          routerSend(JSON.stringify({
           type: 'offer',
           stream: streamName,
           payload: this.connection.localDescription
         }));
       } catch (err) { console.error(err); }
     }
-    this.streamName = streamName;
-    this.router = router;
   }
 
   /**
