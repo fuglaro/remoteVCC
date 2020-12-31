@@ -8,7 +8,8 @@ var router;
 
 
 var signal;
-var signalStream;
+var signalChannel;
+var streams = {};
 var screen;
 var pointer;
 var keyboard;
@@ -30,55 +31,42 @@ async function connect() {
     const msg = JSON.parse(event.data);
 
     // Signal stream.
-    if (msg.stream == 'signal') {
-      if (msg.type == 'request') {
-        // Create signal channel to create other peer-to-peer connections.
-        signal = new PeerStream('signal', routerSend, RTC_CONF);
-        signalStream = signal.connection.createDataChannel("signal");
-        // Close the websocket connection when it is no longer needed.
-        signalStream.onopen = (event) => {router.close()};
-        // Handle signal messages
-        var signalSend = (message) => {signalStream.send(message)};
-        signalStream.onmessage = (message) => {
-          const data = JSON.parse(message.data);
+    if (msg.type == 'request') {
+      // Create signal channel to create other peer-to-peer connections.
+      signal = new PeerStream('signal', routerSend, RTC_CONF);
+      signalChannel = signal.connection.createDataChannel("signal");
+      // Handle signal messages
+      var signalSend = (message) => {signalChannel.send(message)};
+      signalChannel.onmessage = (message) => {
+        const data = JSON.parse(message.data);
 
-          // Pointer stream.
-          if (data.stream == 'pointer') {
-            if (data.type == 'request') {
-              pointer = new PeerStream('pointer', signalSend, RTC_CONF);
-              attachPointer(pointer.connection);
-            }
-            else {
-              pointer.handleMessage(data);
-            }
+        // Handle creation and connection of media and data streams.
+        if (data.type == 'request') {
+          // Create the RTC connection
+          var stream = new PeerStream(data.stream, signalSend, RTC_CONF);
+          // Ready the connection of the data.
+          switch (data.stream) {
+            case 'pointer':
+              attachPointer(stream.connection);
+              break;
+            case 'keyboard':
+              attachKeyboard(stream.connection);
+              break;
+            case 'screen':
+              attachScreen(stream.connection);
+              break;
           }
-
-          // Keyboard stream.
-          if (data.stream == 'keyboard') {
-            if (data.type == 'request') {
-              keyboard = new PeerStream('keyboard', signalSend, RTC_CONF);
-              attachKeyboard(keyboard.connection);
-            }
-            else {
-              keyboard.handleMessage(data);
-            }
-          }
-
-          // Screen stream.
-          if (data.stream == 'screen') {
-            if (data.type == 'request') {
-              screen = new PeerStream('screen', signalSend, RTC_CONF);
-              attachScreen(screen.connection);
-            }
-            else {
-              screen.handleMessage(data);
-            }
-          }
+          // Store the connection.
+          streams[data.stream] = stream;
+        }
+        else {
+          // Handle connection establishment negotiation.
+          streams[data.stream].handleMessage(data);
         }
       }
-      else {
-        signal.handleMessage(msg);
-      }
+    }
+    else {
+      signal.handleMessage(msg);
     }
   }
 
