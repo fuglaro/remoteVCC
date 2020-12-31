@@ -1,4 +1,3 @@
-
 const RTC_CONF = {iceServers: [{urls: 'stun:stun.example.org'}]};
 const FRAME_RATE = 30;
 
@@ -6,14 +5,10 @@ const FRAME_RATE = 30;
 // Signalling server for connection negotiation.
 var router;
 
-
+// Peer to peer streams.
 var signal;
 var signalChannel;
 var streams = {};
-var screen;
-var pointer;
-var keyboard;
-
 
 /**
  * Register with the signalling system and
@@ -21,6 +16,11 @@ var keyboard;
  * connect all streams.
  */
 async function connect() {
+  // Ensure we have cleaned up any existing connections
+  // since we may be reconnecting.
+  Object.values(streams).forEach((stream) => {
+    stream.connection.close();
+  })
   // Connect up the the signalling server.
   const routerURL = document.querySelector('#server').value;
   router = new WebSocket(routerURL);
@@ -85,12 +85,6 @@ document.querySelector('#start').onclick = connect;
  * ******************
  * Pointer Connection
  * ******************
- */
-
-// Stream connection to the client for recieving the pointer.
-var pointerStream;
-
-/**
  * Attach the virtual pointer for incoming events.
  */
 function attachPointer(connection) {
@@ -106,7 +100,7 @@ function attachPointer(connection) {
   var xWheel = 0;
   var yWheel = 0;
   // Listen to mouse events and dispay virtual mouse.
-  pointerStream = connection.createDataChannel("pointer");
+  var pointerStream = connection.createDataChannel("pointer");
   pointerStream.onmessage = (message) => {
     const data = JSON.parse(message.data);
 
@@ -213,12 +207,6 @@ function attachPointer(connection) {
  * ******************
  * Keyboard Connection
  * ******************
- */
-
-// Stream connection to the client for recieving the keyboard.
-var keyboardStream;
-
-/**
  * Attach the virtual keyboard for incoming events.
  */
 function attachKeyboard(connection) {
@@ -227,7 +215,7 @@ function attachKeyboard(connection) {
   let keysDown = new Set();
 
   // Listen to mouse events and dispay virtual mouse.
-  keyboardStream = connection.createDataChannel("keyboard");
+  var keyboardStream = connection.createDataChannel("keyboard");
   keyboardStream.onmessage = (message) => {
     const data = JSON.parse(message.data);
 
