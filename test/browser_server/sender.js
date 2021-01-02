@@ -3,11 +3,10 @@ const FRAME_RATE = 30;
 
 
 // Signalling server for connection negotiation.
-var router;
+var router = null;
 
 // Peer to peer streams.
-var signal;
-var signalChannel;
+var signal = null;
 var streams = {};
 
 /**
@@ -18,9 +17,15 @@ var streams = {};
 async function connect() {
   // Ensure we have cleaned up any existing connections
   // since we may be reconnecting.
+  if (router) router.close();
+  if (signal) signal.connection.close();
   Object.values(streams).forEach((stream) => {
     stream.connection.close();
-  })
+  });
+
+    // Ready display media.
+    await readyScreen(FRAME_RATE);
+
   // Connect up the the signalling server.
   const routerURL = document.querySelector('#server').value;
   router = new WebSocket(routerURL);
@@ -34,7 +39,8 @@ async function connect() {
     if (msg.type == 'request') {
       // Create signal channel to create other peer-to-peer connections.
       signal = new PeerStream('signal', routerSend, RTC_CONF);
-      signalChannel = signal.connection.createDataChannel("signal");
+      var signalChannel = signal.connection.createDataChannel("signal");
+
       // Handle signal messages
       var signalSend = (message) => {signalChannel.send(message)};
       signalChannel.onmessage = (message) => {
@@ -59,24 +65,23 @@ async function connect() {
           // Store the connection.
           streams[data.stream] = stream;
         }
-        else {
+        else if (data.stream in streams) {
           // Handle connection establishment negotiation.
           streams[data.stream].handleMessage(data);
         }
       }
     }
-    else {
+    else if (signal) {
       signal.handleMessage(msg);
     }
   }
 
-  // Ready connections.
-  await readyScreen(FRAME_RATE);
-
-  // Send "server-alive" ping in case any client has been waiting.
-  router.send(JSON.stringify({
-    type: 'server-alive'
-  }));
+  router.onopen = async () => {
+    // Send "server-alive" ping in case any client has been waiting.
+    router.send(JSON.stringify({
+      type: 'server-alive'
+    }));
+  }
 }
 document.querySelector('#start').onclick = connect;
 
@@ -247,18 +252,48 @@ function attachKeyboard(connection) {
 // Stream connection for the display.
 var screenStream;
 
+
+
 /**
  * Prepare screen sharing to send.
  */
 async function readyScreen(frameRate) {
-  // Prepare the display for sending.
-  try {
-    screenStream = await navigator.mediaDevices.getDisplayMedia(
-      {video: true, frameRate: frameRate});
+  const realData = document.querySelector('#realData').checked;
+  var fakeScreenInit = false;
+  if (!fakeScreenInit) {
+    fakeScreenInit = true;
+    if (!realData) {
+      // Generate fake video data.
+      var drawVid = () => {
+        const canvas = document.querySelector('#fakeDisplay');
+        const ctx = canvas.getContext('2d');
+        const time = (new Date()).getTime()
+        ctx.strokeStyle = `rgb(${time/50 % 255},0,0)`;
+        ctx.beginPath();
+        ctx.arc((time/100) % canvas.clientWidth, time/9 % canvas.clientHeight,
+          5, 0, 2*Math.PI);
+        ctx.stroke();
+      }
+      drawVid();
+      setInterval(drawVid, 30);
+    }
+    // Connect up the fake video.
+    const canvas = document.querySelector('#fakeDisplay');
+    screenStream = canvas.captureStream(frameRate);
     document.querySelector('#display').srcObject = screenStream;
-  } catch(err) {
-    console.log(err)
-    alert("Could not activate screen.");
+  }
+  else {
+    // Prepare the display for sending.
+    try {
+      screenStream = await navigator.mediaDevices.getDisplayMedia(
+        {video: true, frameRate: frameRate});
+      document.querySelector('#display').srcObject = screenStream;
+    } catch(err) {
+
+
+      console.log(err)
+      alert("Could not activate screen.");
+    }
   }
 }
 

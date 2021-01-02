@@ -39,6 +39,7 @@ async function connect() {
       const screen = new peerstream.PeerStream('screen', signalSend, RTCConfig);
       const pointer = new peerstream.PeerStream('pointer', signalSend, RTCConfig);
       const keyboard = new peerstream.PeerStream('keyboard', signalSend, RTCConfig);
+
       clientscreen.attachScreen(screen.connection, display);
       clientpointer.attachPointer(pointer.connection, display);
       clientkeyboard.attachKeyboard(keyboard.connection, display);
@@ -57,13 +58,14 @@ async function connect() {
             keyboard.handleMessage(msg);
             break;
         }
-      };
+      }
 
       // Establish the connections.
       screen.request();
       pointer.request();
       keyboard.request();
     }
+    signalStream.onclose = (event) => { connect(); };
   }
 
   // Ready router server messages (initial signalling).
@@ -76,11 +78,11 @@ async function connect() {
     else {
       signal.handleMessage(msg);
     }
-  };
+  }
 
   // Request connection in case the server is already online.
   router.onopen = async ({event}) => {
     signal.request();
-  };
+  }
 }
 connect();
