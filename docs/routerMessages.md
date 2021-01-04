@@ -78,3 +78,4 @@ This means that this first connection has additional messages and message packag
             message: ...Message to client...
         }
         ```
+    * The router will unpack the message before sending it to the relevant client.
