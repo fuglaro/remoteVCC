@@ -1,3 +1,5 @@
+// These configurables should pull from somewhere better in the
+// real server.
 const RTC_CONF = {iceServers: [{urls: 'stun:stun.example.org'}]};
 const FRAME_RATE = 30;
 
@@ -6,7 +8,6 @@ const FRAME_RATE = 30;
 var router = null;
 
 // Peer to peer streams.
-var signal = null;
 var streams = {};
 
 /**
@@ -18,28 +19,40 @@ async function connect() {
   // Ensure we have cleaned up any existing connections
   // since we may be reconnecting.
   if (router) router.close();
-  if (signal) signal.connection.close();
   Object.values(streams).forEach((stream) => {
     stream.connection.close();
   });
 
-    // Ready display media.
-    await readyScreen(FRAME_RATE);
+  // Ready display media.
+  await readyScreen(FRAME_RATE);
 
   // Connect up the the signalling server.
   const routerURL = document.querySelector('#server').value;
-  router = new WebSocket(routerURL);
-  var routerSend = (message) => {router.send(message)};
+  router = new WebSocket(`${routerURL}/server/`);
 
   // Initialise the signal message handlers.
   router.onmessage = async (event) => {
-    const msg = JSON.parse(event.data);
+    // Unwrap the message from the router
+    // to keep track of the client ID.
+    const packagedMsg = JSON.parse(event.data);
+    const clientId = packagedMsg['client-id'];
+    const signal = `${clientId}:signal`;
+    const msg = JSON.parse(packagedMsg['message']);
+    // Get ready to re-wrap the message with details
+    // about which client to send back to.
+    var routerSend = (message) => {
+      router.send(JSON.stringify({
+        'client-id': clientId,
+        'message': message
+      }));
+    }
 
     // Signal stream.
     if (msg.type == 'request') {
       // Create signal channel to create other peer-to-peer connections.
-      signal = new PeerStream('signal', routerSend, RTC_CONF);
-      var signalChannel = signal.connection.createDataChannel("signal");
+      streams[signal] = new PeerStream('signal', routerSend, RTC_CONF);
+      var signalChannel = streams[signal].connection
+        .createDataChannel("signal");
 
       // Handle signal messages
       var signalSend = (message) => {signalChannel.send(message)};
@@ -63,27 +76,29 @@ async function connect() {
               break;
           }
           // Store the connection.
-          streams[data.stream] = stream;
+          streams[`${clientId}:${data.stream}`] = stream;
         }
-        else if (data.stream in streams) {
+        else if (`${clientId}:${data.stream}` in streams) {
           // Handle connection establishment negotiation.
-          streams[data.stream].handleMessage(data);
+          streams[`${clientId}:${data.stream}`].handleMessage(data);
         }
       }
     }
-    else if (signal) {
-      signal.handleMessage(msg);
+    else if (signal in streams) {
+      // Handle connection establishment negotiation.
+      streams[signal].handleMessage(msg);
     }
   }
 
   router.onopen = async () => {
     // Send "server-alive" ping in case any client has been waiting.
     router.send(JSON.stringify({
-      type: 'server-alive'
+      'client-id': 'broadcast',
+      'message': JSON.stringify({ type: 'server-alive' })
     }));
   }
 }
-document.querySelector('#start').onclick = connect;
+document.querySelector('#start').onclick = connect;1
 
 
 /**
@@ -259,10 +274,11 @@ var screenStream;
  */
 async function readyScreen(frameRate) {
   const realData = document.querySelector('#realData').checked;
-  var fakeScreenInit = false;
-  if (!fakeScreenInit) {
-    fakeScreenInit = true;
-    if (!realData) {
+  if (!realData) {
+    // Prepare the fake video data for sending.
+    var fakeScreenInit = false;
+    if (!fakeScreenInit) {
+      fakeScreenInit = true;
       // Generate fake video data.
       var drawVid = () => {
         const canvas = document.querySelector('#fakeDisplay');
@@ -283,7 +299,7 @@ async function readyScreen(frameRate) {
     document.querySelector('#display').srcObject = screenStream;
   }
   else {
-    // Prepare the display for sending.
+    // Prepare the screenshare display for sending.
     try {
       screenStream = await navigator.mediaDevices.getDisplayMedia(
         {video: true, frameRate: frameRate});

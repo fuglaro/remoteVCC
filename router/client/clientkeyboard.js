@@ -2,10 +2,11 @@
  * Connection logic for the keyboard.
  */
 
-async function attachKeyboard(connection, canvas) {
+function attachKeyboard(connection, canvas, onconnected) {
 
   // Ready the send of keyboard events.
   connection.ondatachannel = (event) => {
+    onconnected();
     var dataChannel = event.channel;
 
     dataChannel.onopen = (event) => {

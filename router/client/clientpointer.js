@@ -3,10 +3,11 @@
  * This include, touch pads, touch screens and mouse.
  */
 
-async function attachPointer(connection, canvas) {
+function attachPointer(connection, canvas, onconnected) {
 
   // Ready the send of pointer events.
   connection.ondatachannel = (event) => {
+    onconnected();
     var dataChannel = event.channel;
 
     dataChannel.onopen = (event) => {

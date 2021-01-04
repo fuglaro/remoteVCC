@@ -1,7 +1,7 @@
-import * as peerstream from './peerstream.js';
-import * as clientscreen from './clientscreen.js';
-import * as clientpointer from './clientpointer.js';
-import * as clientkeyboard from './clientkeyboard.js';
+import {PeerStream} from './peerstream.js';
+import {attachScreen} from './clientscreen.js';
+import {attachPointer} from './clientpointer.js';
+import {attachKeyboard} from './clientkeyboard.js';
 
 const display = document.querySelector('#display');
 
@@ -14,6 +14,8 @@ var router;
  * display, audio, mic, and inputs.
  */
 async function connect() {
+  setStatus("<b>Connecting</b><br>Please wait...");
+
   // Get the RTC Configs.
   const baseURL = `${window.location.protocol}//${window.location.host}`;
   const RTCConfig = await fetch(`${baseURL}/rtcconfig`).then(r => r.json());
@@ -26,23 +28,37 @@ async function connect() {
 
   // Swap to a peer-to-peer signal stream to
   // negotiate other peer-to-peer connetions.
-  const signal = new peerstream.PeerStream('signal', routerSend, RTCConfig);
+  const signal = new PeerStream('signal', routerSend, RTCConfig);
   var signalStream;
   signal.connection.ondatachannel = (event) => {
     signalStream = event.channel;
     signalStream.onopen = (openEvent) => {
-      // Close the websocket connection when it is no longer needed.
+      // Close the websocket connection and login system
+      // when it is no longer needed.
       router.close();
+      document.getElementById("loginForm").style.display = "none";
+      // Prepare a callback for when all connections are established.
+      var connectionsWaiting = 0;
+      var pushCallbackWaiting = () => {
+        connectionsWaiting++;
+        return () => {
+          connectionsWaiting--;
+          if (!connectionsWaiting) {
+            // Everything has connected!
+            setStatus('');
+          }
+        }
+      }
 
       // Ready connections.
       var signalSend = (message) => {signalStream.send(message)};
-      const screen = new peerstream.PeerStream('screen', signalSend, RTCConfig);
-      const pointer = new peerstream.PeerStream('pointer', signalSend, RTCConfig);
-      const keyboard = new peerstream.PeerStream('keyboard', signalSend, RTCConfig);
+      const screen = new PeerStream('screen', signalSend, RTCConfig);
+      const pointer = new PeerStream('pointer', signalSend, RTCConfig);
+      const keyboard = new PeerStream('keyboard', signalSend, RTCConfig);
 
-      clientscreen.attachScreen(screen.connection, display);
-      clientpointer.attachPointer(pointer.connection, display);
-      clientkeyboard.attachKeyboard(keyboard.connection, display);
+      attachScreen(screen.connection, display, pushCallbackWaiting());
+      attachPointer(pointer.connection, display, pushCallbackWaiting());
+      attachKeyboard(keyboard.connection, display, pushCallbackWaiting());
 
       // Ready signalling message handling.
       signalStream.onmessage = async (event) => {
@@ -81,8 +97,23 @@ async function connect() {
   }
 
   // Request connection in case the server is already online.
-  router.onopen = async ({event}) => {
-    signal.request();
+  router.onopen = (event) => { signal.request(); };
+}
+
+
+/**
+ * Set the status message
+ * or hide it by passing an empty string.
+ */
+function setStatus(message) {
+  const statusMessage = document.getElementById("statusMessage");
+  if (!message) {
+    statusMessage.style.display = "none";
+  }
+  else {
+    statusMessage.innerHTML = message;
+    statusMessage.style.display = "block";
   }
 }
-connect();
+
+export {connect};
