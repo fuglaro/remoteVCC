@@ -1,8 +1,3 @@
-// These configurables should pull from somewhere better in the
-// real server.
-const RTC_CONF = {iceServers: [{urls: 'stun:stun.example.org'}]};
-const FRAME_RATE = 30;
-
 
 // Signalling server for connection negotiation.
 var router = null;
@@ -23,12 +18,23 @@ async function connect() {
     stream.connection.close();
   });
 
+  // Get the RTC Configs.
+  const baseURL = `${window.location.protocol}//${window.location.host}`;
+  const RTCConfig = await fetch(
+    `${baseURL}/api/rtcconfig`).then(r => r.json());
+  
+
   // Ready display media.
-  await readyScreen(FRAME_RATE);
+  await readyScreen();
+
+  // Attempt to log in with  basic authentication.
+  loginWithBasicAuth("client", document.getElementById("password").value);
 
   // Connect up the the signalling server.
-  const routerURL = document.querySelector('#server').value;
-  router = new WebSocket(`${routerURL}/server/`);
+  const socketProtocol = (
+    (window.location.protocol == 'http:') ? 'ws:' : 'wss:');
+  router = new WebSocket(
+    `${socketProtocol}//${window.location.host}/signal/server`);
 
   // Initialise the signal message handlers.
   router.onmessage = async (event) => {
@@ -50,7 +56,7 @@ async function connect() {
     // Signal stream.
     if (msg.type == 'request') {
       // Create signal channel to create other peer-to-peer connections.
-      streams[signal] = new PeerStream('signal', routerSend, RTC_CONF);
+      streams[signal] = new PeerStream('signal', routerSend, RTCConfig);
       var signalChannel = streams[signal].connection
         .createDataChannel("signal");
 
@@ -62,7 +68,7 @@ async function connect() {
         // Handle creation and connection of media and data streams.
         if (data.type == 'request') {
           // Create the RTC connection
-          var stream = new PeerStream(data.stream, signalSend, RTC_CONF);
+          var stream = new PeerStream(data.stream, signalSend, RTCConfig);
           // Ready the connection of the data.
           switch (data.stream) {
             case 'pointer':
@@ -99,6 +105,27 @@ async function connect() {
   }
 }
 document.querySelector('#start').onclick = connect;1
+
+
+/**
+ * Logs in with Basic Authentication using the supplied credentials.
+ * 
+ * This does not handle success or failure.
+ * 
+ * @param {string} username The username to authenticate with.
+ * @param {string} password The password to authenticate with.
+ * 
+ * Please note the SECURITY IMPLICATIONS in untrusted
+ * environments.
+ */
+function loginWithBasicAuth(username, password) {
+  const baseURL = `${window.location.protocol}//${window.location.host}`;
+  const request = new XMLHttpRequest();
+  request.withCredentials = true;
+  request.open("GET", `${baseURL}/login`, true, username, password);
+  request.onerror = (event) => {console.log(event)};
+  request.send();
+}
 
 
 /**
@@ -272,7 +299,7 @@ var screenStream;
 /**
  * Prepare screen sharing to send.
  */
-async function readyScreen(frameRate) {
+async function readyScreen() {
   const realData = document.querySelector('#realData').checked;
   if (!realData) {
     // Prepare the fake video data for sending.
@@ -295,14 +322,14 @@ async function readyScreen(frameRate) {
     }
     // Connect up the fake video.
     const canvas = document.querySelector('#fakeDisplay');
-    screenStream = canvas.captureStream(frameRate);
+    screenStream = canvas.captureStream(30);
     document.querySelector('#display').srcObject = screenStream;
   }
   else {
     // Prepare the screenshare display for sending.
     try {
       screenStream = await navigator.mediaDevices.getDisplayMedia(
-        {video: true, frameRate: frameRate});
+        {video: true, frameRate: 30});
       document.querySelector('#display').srcObject = screenStream;
     } catch(err) {
 
@@ -334,7 +361,7 @@ function attachScreen(connection) {
  * 
  * This contains the negotiation logic to establish
  * any type of WebRTC connection with the client
- * via the router.
+ * via the singalling service.
  * 
  * This also includes enough hooks to attach logic
  * for what to do with the data going across the stream.

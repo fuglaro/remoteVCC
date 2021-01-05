@@ -45,7 +45,7 @@ This enables the communication stream to be established and further communicatio
 
 ### Additional Router Messaging
 
-The very first connection between a client and the server runs through the router and the router handles additional messaging for authentication and authorisation. The client and server then uses that connection as the signalling server to establish a peer-to-peer data stream to act as a trusted signalling channel for any further peer-to-peer connections.
+The very first connection between a client and the server runs through the router and the router handles some additional messaging. Each client and the server then uses that connection as the signalling server to establish a peer-to-peer data stream to act as a trusted signalling channel for any further peer-to-peer connections.
 
 This means that this first connection has additional messages and message packaging:
 

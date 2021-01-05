@@ -2,9 +2,19 @@
 
 Remote desktop solution - building on WebRTC, modern media codecs, hardware encoders, and gstreamer for an open source, fast and secure interface to remote workstations. A simple reuse of already advancing technologies. It is unlikely that this can compete with video-game streaming solutions for quite a while but it should still be considered a goal.
 
-## References
 
-* [Signaling service protocol](docs/routerMessages.md)
+## Modes
+*WebMode TLS only **TODO**
+
+## Protocols
+
+Communication between servers and clients starts off with them each connecting via WebSocket to a router service which may reside on the host server itself (Direct-Mode) or run separarelt (Web-Mode).
+
+This WebSocket server authenticates the client via either Digest authentication (http://tools.ietf.org/html/rfc2617) if running in Direct-Mode, or via OAuth 2.0 (https://tools.ietf.org/html/rfc6749) if running in Web-Mode. **TODO - implement OAuth and Web-Mode - tidy up Direct-Mode for depoyment - restrict authentication and options in each mode - enforce TLS in Web-Mode**. In server is authenticated via Digest authentication in Direct-Mode, 
+
+When the server 
+
+* [Signaling protocol](docs/routerMessages.md)
 
 ## Goals
 

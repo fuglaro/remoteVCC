@@ -18,13 +18,20 @@ async function connect() {
 
   // Get the RTC Configs.
   const baseURL = `${window.location.protocol}//${window.location.host}`;
-  const RTCConfig = await fetch(`${baseURL}/rtcconfig`).then(r => r.json());
+  const RTCConfig = await fetch(
+    `${baseURL}/api/rtcconfig`).then(r => r.json());
+
+  // Attempt to log in with  basic authentication.
+  loginWithBasicAuth("client", document.getElementById("password").value);
 
   // Connect up the the signalling server.
   const socketProtocol = (
     (window.location.protocol == 'http:') ? 'ws:' : 'wss:');
-  router = new WebSocket(`${socketProtocol}//${window.location.host}`);
-  var routerSend = (message) => {router.send(message)};
+  router = new WebSocket(
+    `${socketProtocol}//${window.location.host}/signal/client`);
+  router.onerror = (event) => { setStatus("Connection Failed.", 2); };
+
+  var routerSend = (message) => { router.send(message) };
 
   // Swap to a peer-to-peer signal stream to
   // negotiate other peer-to-peer connetions.
@@ -102,10 +109,12 @@ async function connect() {
 
 
 /**
- * Set the status message
- * or hide it by passing an empty string.
+ * Display a status message
+ * or hide it by omitting a value.
+ * @param {string} message The message to display.
+ * @param {int} timeout A timeout in seconds to hide the message.
  */
-function setStatus(message) {
+async function setStatus(message="", timeout=null) {
   const statusMessage = document.getElementById("statusMessage");
   if (!message) {
     statusMessage.style.display = "none";
@@ -113,7 +122,28 @@ function setStatus(message) {
   else {
     statusMessage.innerHTML = message;
     statusMessage.style.display = "block";
+    if (timeout) setTimeout(setStatus, timeout * 1000);
   }
 }
+
+
+/**
+ * Logs in with Basic Authentication using the supplied credentials.
+ * 
+ * This does not handle success or failure.
+ * 
+ * @param {string} username The username to authenticate with.
+ * @param {string} password The password to authenticate with.
+ * 
+ * Please note the SECURITY IMPLICATIONS in untrusted
+ * environments.
+ */
+function loginWithBasicAuth(username, password) {
+  const baseURL = `${window.location.protocol}//${window.location.host}`;
+  const request = new XMLHttpRequest();
+  request.open("GET", `${baseURL}/login`, true, username, password);
+  request.send();
+}
+
 
 export {connect};

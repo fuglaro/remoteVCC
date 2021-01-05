@@ -1,7 +1,8 @@
 const WebSocket = require('ws');
 const express = require('express');
-const path = require('path');
-const service = require('http').createServer();
+const passport = require('passport');
+const passportHttp = require('passport-http')
+const crypto = require('crypto');
 
 
 /**
@@ -12,10 +13,47 @@ const ICE_SERVERS = process.env.ICE_SERVERS || 'stun:stun.example.org';
 
 
 /**
- * Router service.
+ * Authentication preparation.
+ * 
+ * This just uses Basic Digest Authentication
+ * and is therefore only suitable in a trusted
+ * environment where the shared key (password)
+ * can be manually given to the client.
+ */
+const secretKey = crypto.randomBytes(64).toString('hex');
+console.log(`Please connect using password: ${secretKey}`);
+passport.use(new passportHttp.DigestStrategy({ qop: 'auth' },
+  (username, done) => {
+    return done(null, "client", secretKey);
+  }
+));
+
+
+/**
+ * Webpage service
+ */
+// Serve the client app.
+var app = express();
+app.get('/', (req, res) => {
+  res.sendFile('./public/client/client.html', { root: __dirname });
+});
+app.use(express.static('./public'));
+// Give the client the rtc config.
+app.get('/api/rtcconfig', (req, res) => {
+  res.send(JSON.stringify({iceServers: [{urls: ICE_SERVERS}]}));
+});
+// Provide and endpoint for authenticating.
+app.get('/login', 
+  passport.authenticate('digest', { session: false }),
+  (req, res) => { res.send("OK"); }
+);
+
+
+/**
+ * Serve the router service.
  */
 // Start the router service
-const wss = new WebSocket.Server({ server: service });
+const wss = new WebSocket.Server({ noServer: true });
 var connectionCount = 0;
 var getConnectionNumber = () => { return connectionCount++; };
 var server = null;
@@ -24,11 +62,10 @@ wss.on('connection', (ws, request) => {
   var connectionNumber = getConnectionNumber();
 
   // Establish connection for the server.
-  if (request.url.startsWith("/server/")) {
+  if (request.url.startsWith("/signal/server")) {
     server = ws;
     ws.on('close', (event) => { server = null; });
     ws.on('message', (message) => {
-      console.log(`\nServer(${connectionNumber}): ${message}\n`);
       // Unwrap the message and send to the appropriate clients.
       var data = JSON.parse(message);
       if (data['client-id'] == 'broadcast') {
@@ -42,11 +79,10 @@ wss.on('connection', (ws, request) => {
   }
 
   // Establish connection for a client.
-  else {
+  else if (request.url.startsWith("/signal/client")) {
     clients[connectionNumber] = ws;
     ws.on('close', (event) => { delete clients[connectionNumber]; });
     ws.on('message', (message) => {
-      console.log(`\nClient(${connectionNumber}): ${message}\n`);
       if (server) {
         // Wrap the message so the server knows which client
         // to respond back to.
@@ -57,29 +93,25 @@ wss.on('connection', (ws, request) => {
       }
     });
   }
+
 });
+// Connect it up for serving
+app.get(['/signal/client', '/signal/server'],
+  // Authenticate with basic digest auth.
+  passport.authenticate('digest', { session: false }),
+  // Handle websocket upgrade.
+  (request, res, next) => {
+    if (request.headers.upgrade == 'websocket') {
+      wss.handleUpgrade(request, request.socket, '', socket => {
+        wss.emit('connection', socket, request);
+      });
+    }
+    else next();
+  }
+);
 
 
 /**
- * Webpage service
+ * Done and listening.
  */
-// Serve the client app.
-var www = express();
-www.get('/', (req, res) => {
-  res.sendFile('./client/client.html', { root: __dirname });
-})
-www.use(express.static(path.join(__dirname, './client')));
-// Give the client the rtc config.
-www.get('/rtcconfig', (req, res) => {
-  res.send(JSON.stringify({iceServers: [{urls: ICE_SERVERS}]}));
-})
-// Register http responses.
-service.on('request', www);
-
-
-/**
- * Serve all.
- */
-// Ready
-service.listen(PORT);
-console.log('Started...');
+app.listen(PORT);
