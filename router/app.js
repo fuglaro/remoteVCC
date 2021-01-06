@@ -1,15 +1,24 @@
 const WebSocket = require('ws');
 const express = require('express');
-const passport = require('passport');
-const passportHttp = require('passport-http')
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+
+
+
+
 
 
 /**
  * Configurable parameters.
  */
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || "8080";
 const ICE_SERVERS = process.env.ICE_SERVERS || 'stun:stun.example.org';
+const PBKDF2_ITERATIONS = parseInt(process.env.PBKDF2_ITERATIONS) || 100000;
+const CRYPTO_SALT = crypto.randomBytes(4);
+
+
+
 
 
 /**
@@ -20,13 +29,34 @@ const ICE_SERVERS = process.env.ICE_SERVERS || 'stun:stun.example.org';
  * environment where the shared key (password)
  * can be manually given to the client.
  */
-const secretKey = crypto.randomBytes(64).toString('hex');
-console.log(`Please connect using password: ${secretKey}`);
-passport.use(new passportHttp.DigestStrategy({ qop: 'auth' },
+const secretKey = crypto.randomBytes(12).toString('hex');
+console.log(`Please connect using Connection Key: ${secretKey}`);
+
+
+
+console.log(jwt.sign('"TEST"', "MYSECRETKEY"));
+
+
+
+
+
+
+
+
+
+/*passport.use(new passportHttp.DigestStrategy({ qop: 'auth' },
   (username, done) => {
     return done(null, "client", secretKey);
   }
 ));
+*/
+
+
+
+
+
+
+
 
 
 /**
@@ -38,15 +68,33 @@ app.get('/', (req, res) => {
   res.sendFile('./public/client/client.html', { root: __dirname });
 });
 app.use(express.static('./public'));
-// Give the client the rtc config.
-app.get('/api/rtcconfig', (req, res) => {
-  res.send(JSON.stringify({iceServers: [{urls: ICE_SERVERS}]}));
+// Give the client the config.
+app.get('/api/config', (req, res) => {
+  res.send(JSON.stringify({
+    rtc: { iceServers: [{urls: ICE_SERVERS}] },
+    pbkdf2_iters: PBKDF2_ITERATIONS,
+    crypto_salt: [...CRYPTO_SALT]
+  }));
 });
+
+
+
+
+
+
+/*
+
 // Provide and endpoint for authenticating.
 app.get('/login', 
   passport.authenticate('digest', { session: false }),
   (req, res) => { res.send("OK"); }
 );
+*/
+
+
+
+
+
 
 
 /**
@@ -97,8 +145,21 @@ wss.on('connection', (ws, request) => {
 });
 // Connect it up for serving
 app.get(['/signal/client', '/signal/server'],
+
+
+
+
+
+
+/*
   // Authenticate with basic digest auth.
   passport.authenticate('digest', { session: false }),
+
+*/
+
+
+
+
   // Handle websocket upgrade.
   (request, res, next) => {
     if (request.headers.upgrade == 'websocket') {

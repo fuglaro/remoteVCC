@@ -20,15 +20,28 @@ async function connect() {
 
   // Get the RTC Configs.
   const baseURL = `${window.location.protocol}//${window.location.host}`;
-  const RTCConfig = await fetch(
-    `${baseURL}/api/rtcconfig`).then(r => r.json());
+  const config = await fetch(
+    `${baseURL}/api/config`).then(r => r.json());
   
 
   // Ready display media.
   await readyScreen();
 
+
+
+
+
+
+
   // Attempt to log in with  basic authentication.
   loginWithBasicAuth("client", document.getElementById("password").value);
+
+
+
+
+
+
+
 
   // Connect up the the signalling server.
   const socketProtocol = (
@@ -56,7 +69,7 @@ async function connect() {
     // Signal stream.
     if (msg.type == 'request') {
       // Create signal channel to create other peer-to-peer connections.
-      streams[signal] = new PeerStream('signal', routerSend, RTCConfig);
+      streams[signal] = new PeerStream('signal', routerSend, config.rtc);
       var signalChannel = streams[signal].connection
         .createDataChannel("signal");
 
@@ -68,7 +81,7 @@ async function connect() {
         // Handle creation and connection of media and data streams.
         if (data.type == 'request') {
           // Create the RTC connection
-          var stream = new PeerStream(data.stream, signalSend, RTCConfig);
+          var stream = new PeerStream(data.stream, signalSend, config.rtc);
           // Ready the connection of the data.
           switch (data.stream) {
             case 'pointer':
@@ -104,7 +117,14 @@ async function connect() {
     }));
   }
 }
-document.querySelector('#start').onclick = connect;1
+document.querySelector('#start').onclick = connect;
+
+
+
+
+
+
+
 
 
 /**
@@ -126,6 +146,15 @@ function loginWithBasicAuth(username, password) {
   request.onerror = (event) => {console.log(event)};
   request.send();
 }
+
+
+
+
+
+
+
+
+
 
 
 /**

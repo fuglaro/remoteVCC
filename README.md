@@ -4,17 +4,43 @@ Remote desktop solution - building on WebRTC, modern media codecs, hardware enco
 
 
 ## Modes
-*WebMode TLS only **TODO**
+** TODO ** Document and implement.
+### WebMode
+* TLS only **TODO**
+* OAuth
 
 ## Protocols
 
-Communication between servers and clients starts off with them each connecting via WebSocket to a router service which may reside on the host server itself (Direct-Mode) or run separarelt (Web-Mode).
-
-This WebSocket server authenticates the client via either Digest authentication (http://tools.ietf.org/html/rfc2617) if running in Direct-Mode, or via OAuth 2.0 (https://tools.ietf.org/html/rfc6749) if running in Web-Mode. **TODO - implement OAuth and Web-Mode - tidy up Direct-Mode for depoyment - restrict authentication and options in each mode - enforce TLS in Web-Mode**. In server is authenticated via Digest authentication in Direct-Mode, 
-
-When the server 
-
 * [Signaling protocol](docs/routerMessages.md)
+
+## Communication Security
+
+**TODO**
+Note this is still in development and would then need full regression tests and a security audit before it could be considered secure in any way.
+
+### Direct Mode
+
+This connection mode relies on the ablity of the client and the server to securely echange a shared key separately to this protocol. This avoids the need for registering digital certificates for TLS or having an OAuth2 service.
+
+Please note that, while this connection mode is intended for use within a trusted network that is behind a firewall, we should still strive to make this connection mode as secure as possible. The Web Mode is recommended for situations that require security.
+
+Communication is established as follows:
+* Stetch the connection key or password (which must have already been securely shared with the router) using PBKDF2 creating a secret key for encryption via AES-GCM-256. The number of PBKDF2 iterations (default 100000) and the salt (32 bits) is retrieved from the router in plaintext. The router similarly generates a matching secret key and securely holds onto this instead of the connection key or password.
+* Retrieve the Next Valid Authentication Key (96 bits) from the router in plaintext. This is reset by the server on each valid authentication so as to avoid replay attacks that could establish WebSocket connections and force the router to consume memory.
+* Create an authentication token by encrypting the Next Valid Authentication Key via AES-GCM-256, using the secret key and a random initialisation vector(96 bits), and concatenating the result with the initialisation vector in plaintext.
+* Authenticate WebSocket connection establishment (before the connection upgrade) by sending the authentication token in the WebSocket request URL.
+* All communication in either direction over the established WebSocket connection is encrypted via AES-GCM-256 using the secret key and an initialisation vector that is randomly recreated for each message. Each initialisation vector is sent in plaintext along with the encrypted message. This WebSocket connection is used to establish a single WebRTC connection.
+* All further communication occurs over WebRTC connections and it's inbuilt security.
+
+### Web Mode
+
+This connection mode relies on registering digital certificates for TLS to the router and an OAuth2 service.
+
+Communication is established as follows:
+* Connect to the router via HTTPS and WSS.
+* Authenticate WebSocket connection establishment (before the connection upgrade) via OAuth2 by sending tokens in the WSS request URL.
+* Communicate with the router over WSS to establish a single WebRTC connection.
+* All further communication occurs over WebRTC connections and it's inbuilt security.
 
 ## Goals
 

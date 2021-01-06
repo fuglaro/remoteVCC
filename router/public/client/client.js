@@ -2,6 +2,8 @@ import {PeerStream} from './peerstream.js';
 import {attachScreen} from './clientscreen.js';
 import {attachPointer} from './clientpointer.js';
 import {attachKeyboard} from './clientkeyboard.js';
+import {genJWTAuthKey, genAESEncKey} from './security.js';
+
 
 const display = document.querySelector('#display');
 
@@ -18,11 +20,40 @@ async function connect() {
 
   // Get the RTC Configs.
   const baseURL = `${window.location.protocol}//${window.location.host}`;
-  const RTCConfig = await fetch(
-    `${baseURL}/api/rtcconfig`).then(r => r.json());
+  const config = await fetch(
+    `${baseURL}/api/config`).then(r => r.json());
+
+
+
+  // Authentication preparation.
+
+  // Derive a streched auth key from the secret connection key.
+  setStatus("<b>Connecting</b><br>Securing Key<br>Please wait...");
+  const authSecret = await genJWTAuthKey(
+    document.getElementById("password").value,
+    config.crypto_salt,
+    config.pbkdf2_iters);
+  const encSecret = await genAESEncKey(
+    document.getElementById("password").value,
+    config.crypto_salt,
+    config.pbkdf2_iters);
+  setStatus("<b>Connecting</b><br>Please wait...");
+
+  //TODO delete key extraction?
+
+
+  jwt.sign();
+
 
   // Attempt to log in with  basic authentication.
+  const passhash = hashPassword();
   loginWithBasicAuth("client", document.getElementById("password").value);
+
+
+
+
+
+
 
   // Connect up the the signalling server.
   const socketProtocol = (
@@ -35,7 +66,7 @@ async function connect() {
 
   // Swap to a peer-to-peer signal stream to
   // negotiate other peer-to-peer connetions.
-  const signal = new PeerStream('signal', routerSend, RTCConfig);
+  const signal = new PeerStream('signal', routerSend, config.rtc);
   var signalStream;
   signal.connection.ondatachannel = (event) => {
     signalStream = event.channel;
@@ -59,9 +90,9 @@ async function connect() {
 
       // Ready connections.
       var signalSend = (message) => {signalStream.send(message)};
-      const screen = new PeerStream('screen', signalSend, RTCConfig);
-      const pointer = new PeerStream('pointer', signalSend, RTCConfig);
-      const keyboard = new PeerStream('keyboard', signalSend, RTCConfig);
+      const screen = new PeerStream('screen', signalSend, config.rtc);
+      const pointer = new PeerStream('pointer', signalSend, config.rtc);
+      const keyboard = new PeerStream('keyboard', signalSend, config.rtc);
 
       attachScreen(screen.connection, display, pushCallbackWaiting());
       attachPointer(pointer.connection, display, pushCallbackWaiting());
@@ -124,25 +155,6 @@ async function setStatus(message="", timeout=null) {
     statusMessage.style.display = "block";
     if (timeout) setTimeout(setStatus, timeout * 1000);
   }
-}
-
-
-/**
- * Logs in with Basic Authentication using the supplied credentials.
- * 
- * This does not handle success or failure.
- * 
- * @param {string} username The username to authenticate with.
- * @param {string} password The password to authenticate with.
- * 
- * Please note the SECURITY IMPLICATIONS in untrusted
- * environments.
- */
-function loginWithBasicAuth(username, password) {
-  const baseURL = `${window.location.protocol}//${window.location.host}`;
-  const request = new XMLHttpRequest();
-  request.open("GET", `${baseURL}/login`, true, username, password);
-  request.send();
 }
 
 
