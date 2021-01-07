@@ -5,6 +5,7 @@ const WebSocket = require('ws');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const forge = require('node-forge');
+process.chdir(__dirname); // Server relative to this file.
 
 /**
  * Configurable parameters.
@@ -67,9 +68,9 @@ console.log(`Please connect using Connection Key: ${
 // Serve the client app.
 var app = express();
 app.get('/', (req, res) => {
-  res.sendFile('./public/client/client.html', { root: __dirname });
+  res.sendFile('public/client/client.html', { root: __dirname });
 });
-app.use(express.static('./public'));
+app.use(express.static('public'));
 // Give the client the config.
 app.get('/api/config', (req, res) => {
   res.send(JSON.stringify({
@@ -153,4 +154,5 @@ app.get(['/signal/client', '/signal/server'],
 /**
  * Done and listening.
  */
+console.log(`Serving on port: ${PORT}`);
 https.createServer({cert: tlsCert, key: tlsKey}, app).listen(PORT);
