@@ -2,12 +2,7 @@
 
 Remote desktop solution - building on WebRTC, modern media codecs, hardware encoders, and gstreamer for an open source, fast and secure interface to remote workstations. A simple reuse of already advancing technologies. It is unlikely that this can compete with video-game streaming solutions for quite a while but it should still be considered a goal.
 
-
-## Modes
-** TODO ** Document and implement.
-### WebMode
-* TLS only **TODO**
-* OAuth
+1. **todo** have a server with virtual devices to control the remote machine.
 
 ## Protocols
 
@@ -15,32 +10,20 @@ Remote desktop solution - building on WebRTC, modern media codecs, hardware enco
 
 ## Communication Security
 
-**TODO**
-Note this is still in development and would then need full regression tests and a security audit before it could be considered secure in any way.
+**Note that this is still in development and would then need full regression tests and a security audit before it could be considered secure in any way. Imagine one person implemented this when at home feeling really unwell. Also note the need for a security audit of the whole dependency chain.**
 
-### Direct Mode
-
-This connection mode relies on the ablity of the client and the server to securely echange a shared key separately to this protocol. This avoids the need for registering digital certificates for TLS or having an OAuth2 service.
-
-Please note that, while this connection mode is intended for use within a trusted network that is behind a firewall, we should still strive to make this connection mode as secure as possible. The Web Mode is recommended for situations that require security.
+Communication between the client and server is first established through the router service. This relies on WSS connections and therefore has a need for digital certificates. When the router is running in Web Mode and isn't just using its own host as the server, this should be via a certificate authority. When running Direct Mode, and you have control of both your client and your server, or you are inside a trusted network, you can have the router create your own self-signed certificate (SHA256 signed, 2048 bit RSA cert, valid for a year).
 
 Communication is established as follows:
-* Stetch the connection key or password (which must have already been securely shared with the router) using PBKDF2 creating a secret key for encryption via AES-GCM-256. The number of PBKDF2 iterations (default 100000) and the salt (32 bits) is retrieved from the router in plaintext. The router similarly generates a matching secret key and securely holds onto this instead of the connection key or password.
-* Retrieve the Next Valid Authentication Key (96 bits) from the router in plaintext. This is reset by the server on each valid authentication so as to avoid replay attacks that could establish WebSocket connections and force the router to consume memory.
-* Create an authentication token by encrypting the Next Valid Authentication Key via AES-GCM-256, using the secret key and a random initialisation vector(96 bits), and concatenating the result with the initialisation vector in plaintext.
-* Authenticate WebSocket connection establishment (before the connection upgrade) by sending the authentication token in the WebSocket request URL.
-* All communication in either direction over the established WebSocket connection is encrypted via AES-GCM-256 using the secret key and an initialisation vector that is randomly recreated for each message. Each initialisation vector is sent in plaintext along with the encrypted message. This WebSocket connection is used to establish a single WebRTC connection.
+* In Web Mode, the router is set up with a digital certificate registered with a certificate authority. In Direct Mode, inside a secure environment, the router can alternatively be set up with a self signed certificate.
+* Connections to the router are made via HTTPS and WSS. Connections without TLS are denied by the router.
+* A JSON Web Token (created with HMAC-SHA512 using a 2048 bit random key) is obtained. Web Mode requires an OAuth2 service for authentication, before returning a short lived JWT, while Direct Mode outputs to the console a permanent JWT for manual collection at launch.
+* A new WSS WebSocket connection is authenticated as it is establised (before the connection upgrade) by sending the JSON Web Token as the access_token.
+* This WSS connection is used to establish a single WebRTC connection between server and client.
 * All further communication occurs over WebRTC connections and it's inbuilt security.
 
-### Web Mode
-
-This connection mode relies on registering digital certificates for TLS to the router and an OAuth2 service.
-
-Communication is established as follows:
-* Connect to the router via HTTPS and WSS.
-* Authenticate WebSocket connection establishment (before the connection upgrade) via OAuth2 by sending tokens in the WSS request URL.
-* Communicate with the router over WSS to establish a single WebRTC connection.
-* All further communication occurs over WebRTC connections and it's inbuilt security.
+ 1. **todo** figure out the best way for host servers to connect to WebMode Routers to serve their data; authentication is still needed here.
+ 1. **todo** design and implement WebMode.
 
 ## Goals
 
@@ -54,13 +37,13 @@ This project aims to find an opportunity for repurposing existing technology to 
 * Open source is good - obviously.
 
 ### Advantages
-* WebRTC is designed from the ground up as a low latency peer-to-peer media streaming system with security, open standards and compatibility with a wide range of codecs. WebRTC implementations and its associated codecs will continue to improve for needs that overlap with this project. Video conferencing shares some of the main challenges with remote desktop access including screen sharing. WebRTC and its associated codecs have major backers heavily motivated to improve it under open standards and hinging upon that progress gives this project a good chance of outpacing solutions such as VNC, RDP, and proprietary solutions.
+* WebRTC is designed from the ground up as a low latency peer-to-peer media streaming system with security, open standards, and compatibility with a wide range of codecs. WebRTC implementations and its associated codecs will continue to improve for needs that overlap with this project. Video conferencing shares some of the main challenges with remote desktop access including screen sharing. WebRTC and its associated codecs have major backers heavily motivated to improve it under open standards and hinging upon that progress gives this project a good chance of outpacing solutions such as VNC, RDP, and proprietary solutions.
 * WebRTC is designed to allow for secure communication of sensitive content over the open internet using well established encryption technology. This is a major advantage for this project as it allows for the potential for remote access across untrusted networks. There are also established solutions to securely tunneling through strict firewalls, such as with corporate networks.
 
 ### Challenges
 * Security is hard. Although WebRTC provides proven secure channels once peer-to-peer connections have been established between the client and the server, secure establishment of the client and server connections still needs to be implemented. While security across a range of personal and corporate scenarios is one of the aims of this project, until this project has enough backing that it is regularly reviewed and audited by security experts, it should not, in any way, be trusted as secure.
-  * This project should, whereever reasonable, piggyback on other solutions that have the backing to ensure security. An example of this could be to use an existing chat messaging system with security inbuilt for the WebRTC signalling service component. This needs to be balanced with avoiding unneccessary complexity.
-* Codecs may currently be optimised for media compression rather than tuned to take advantage of typical desktop video. While media playback is important, are there video codecs that can take advantage of patterns like static regions, text areas, or vertically scrolling regions? Does common hardware include these encoders?
-  * Possibly send two video streams, one for compressed fast, and one for slow high quality. Then in another data channel send regions that change so as to build a pixel mask for which stream to display for each pixel. That said, it is likely that there are exisiting video encoders that do a suitable job of taking advantage of simplification patters with typical desktop access. Anything custom here will probably be of a complexity such that it should be found or pushed into other projects.
+  * This project should, wherever reasonable, piggyback on other solutions that have the backing to ensure security, using systems like HTTPS, WSS, JWT, OAuth2 and the like in the most simple ways possible.
+  * Since this will establish WebRTC connections to an application that can control your machine remotely, this type of application is about as dangerous as it can get. Can this ever be safe enough? VPNs can help avoid the risks but secrurity should always be considered.
+* Codecs may currently be optimised for media compression rather than tuned to take advantage of typical desktop video. While media playback is important, are there video codecs that can take advantage of patterns like static regions, text areas, or vertically scrolling regions? Does common hardware include these encoders? Systems like VNC and RDP deeply inspect graphics contexts for optimisations rather than just streaming final images. This will need to outpace that without those complexities.
 * Hardware encoder support is limitted. Which devices need specific implementations? Are there implications to reserving the device from other applications? Which codecs are supported? Can this be simplified into a simple gstreamer plugin that can be combined with framebuffer capture on the same device without overheads of memory copies? Which devices support this? Does a fallback to software allow for low enough latency and resource consumption?
 * Do WebRTC implementations allow for latencies low enough for user interaction? Video conferencing requires sub-second latency but smooth user interaction may have higher demands.

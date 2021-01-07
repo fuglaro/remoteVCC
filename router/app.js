@@ -1,62 +1,64 @@
-const WebSocket = require('ws');
+const https = require('https');
+const fs = require('fs');
 const express = require('express');
+const WebSocket = require('ws');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-
-
-
-
-
-
+const forge = require('node-forge');
 
 /**
  * Configurable parameters.
  */
 const PORT = process.env.PORT || "8080";
 const ICE_SERVERS = process.env.ICE_SERVERS || 'stun:stun.example.org';
-const PBKDF2_ITERATIONS = parseInt(process.env.PBKDF2_ITERATIONS) || 100000;
-const CRYPTO_SALT = crypto.randomBytes(4);
-
-
-
+const TLS_KEY_FILE = process.env.TLS_KEY;
+const TLS_CERT_FILE = process.env.TLS_CERT;
 
 
 /**
- * Authentication preparation.
- * 
- * This just uses Basic Digest Authentication
- * and is therefore only suitable in a trusted
- * environment where the shared key (password)
- * can be manually given to the client.
+ * TLS (HTTPS & WSS) Encryption preparation.
  */
-const secretKey = crypto.randomBytes(12).toString('hex');
-console.log(`Please connect using Connection Key: ${secretKey}`);
-
-
-
-console.log(jwt.sign('"TEST"', "MYSECRETKEY"));
-
-
-
-
-
-
-
-
-
-/*passport.use(new passportHttp.DigestStrategy({ qop: 'auth' },
-  (username, done) => {
-    return done(null, "client", secretKey);
+var tlsKey;
+var tlsCert;
+if (TLS_KEY_FILE && TLS_CERT_FILE) {
+  // Use provided TLS credentials.
+  tlsKey = fs.readFileSync(TLS_KEY_FILE);
+  tlsCert = fs.readFileSync(TLS_CERT_FILE);
+}
+else {
+  // Automatically generate TLS credentials.
+  function createSelfSignedCertAndKey() {
+    // generate a keypair and create an X.509v3 certificate
+    const keys = forge.pki.rsa.generateKeyPair(2048);
+    var cert = forge.pki.createCertificate();
+    cert.publicKey = keys.publicKey;
+    cert.serialNumber = `00${crypto.randomBytes(18).toString('hex')}`;
+    // Expire it in a year.
+    cert.validity.notAfter.setFullYear(
+      cert.validity.notBefore.getFullYear() + 1);
+    var attrs = [
+      {name: 'commonName', value: `AutoCertRemovid-${
+        crypto.randomBytes(256).toString('hex')
+      }`},
+      {name: 'organizationName', value: 'Unknown'},
+    ];
+    cert.setSubject(attrs);
+    cert.setIssuer(attrs);
+    cert.sign(keys.privateKey, forge.md.sha256.create());
+    return [forge.pki.certificateToPem(cert),
+      forge.pki.privateKeyToPem(keys.privateKey)];
   }
-));
-*/
+  [tlsCert, tlsKey] = createSelfSignedCertAndKey();
+  console.log(`Using automatically made TLS certificate:\n${tlsCert}`);
+}
 
-
-
-
-
-
-
+/**
+ * Authentication preparation.
+ */
+const secretKey = crypto.randomBytes(256);
+console.log(`Please connect using Connection Key: ${
+  jwt.sign(JSON.stringify({userid: 'anon'}), secretKey, {algorithm: 'HS512'})
+}`);
 
 
 /**
@@ -71,30 +73,9 @@ app.use(express.static('./public'));
 // Give the client the config.
 app.get('/api/config', (req, res) => {
   res.send(JSON.stringify({
-    rtc: { iceServers: [{urls: ICE_SERVERS}] },
-    pbkdf2_iters: PBKDF2_ITERATIONS,
-    crypto_salt: [...CRYPTO_SALT]
+    rtc: { iceServers: [{urls: ICE_SERVERS}] }
   }));
 });
-
-
-
-
-
-
-/*
-
-// Provide and endpoint for authenticating.
-app.get('/login', 
-  passport.authenticate('digest', { session: false }),
-  (req, res) => { res.send("OK"); }
-);
-*/
-
-
-
-
-
 
 
 /**
@@ -145,26 +126,23 @@ wss.on('connection', (ws, request) => {
 });
 // Connect it up for serving
 app.get(['/signal/client', '/signal/server'],
-
-
-
-
-
-
-/*
-  // Authenticate with basic digest auth.
-  passport.authenticate('digest', { session: false }),
-
-*/
-
-
-
-
+  // Authenticate.
+  (req, res, next) => {
+    try {
+      var payload = jwt.verify(req.query.auth, secretKey);
+      req.userid = payload.userid
+      // We are authenticated so continue with connection.
+      next();
+    } catch(err) {
+      // Authentication failed -> 401.
+      res.status(401).send(err.message);
+    }
+  },
   // Handle websocket upgrade.
-  (request, res, next) => {
-    if (request.headers.upgrade == 'websocket') {
-      wss.handleUpgrade(request, request.socket, '', socket => {
-        wss.emit('connection', socket, request);
+  (req, res, next) => {
+    if (req.headers.upgrade == 'websocket') {
+      wss.handleUpgrade(req, req.socket, '', socket => {
+        wss.emit('connection', socket, req);
       });
     }
     else next();
@@ -175,4 +153,4 @@ app.get(['/signal/client', '/signal/server'],
 /**
  * Done and listening.
  */
-app.listen(PORT);
+https.createServer({cert: tlsCert, key: tlsKey}, app).listen(PORT);

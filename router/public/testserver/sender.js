@@ -18,7 +18,7 @@ async function connect() {
     stream.connection.close();
   });
 
-  // Get the RTC Configs.
+  // Get the Configs.
   const baseURL = `${window.location.protocol}//${window.location.host}`;
   const config = await fetch(
     `${baseURL}/api/config`).then(r => r.json());
@@ -28,28 +28,14 @@ async function connect() {
   await readyScreen();
 
 
-
-
-
-
-
-  // Attempt to log in with  basic authentication.
-  loginWithBasicAuth("client", document.getElementById("password").value);
-
-
-
-
-
-
-
-
   // Connect up the the signalling server.
-  const socketProtocol = (
-    (window.location.protocol == 'http:') ? 'ws:' : 'wss:');
   router = new WebSocket(
-    `${socketProtocol}//${window.location.host}/signal/server`);
+    `wss://${window.location.host}/signal/server?auth=${
+      document.getElementById("secret").value
+    }`);
 
-  // Initialise the signal message handlers.
+  // Initialise the signal message handlers,
+  // authenticating in the query parameters.
   router.onmessage = async (event) => {
     // Unwrap the message from the router
     // to keep track of the client ID.
@@ -118,43 +104,6 @@ async function connect() {
   }
 }
 document.querySelector('#start').onclick = connect;
-
-
-
-
-
-
-
-
-
-/**
- * Logs in with Basic Authentication using the supplied credentials.
- * 
- * This does not handle success or failure.
- * 
- * @param {string} username The username to authenticate with.
- * @param {string} password The password to authenticate with.
- * 
- * Please note the SECURITY IMPLICATIONS in untrusted
- * environments.
- */
-function loginWithBasicAuth(username, password) {
-  const baseURL = `${window.location.protocol}//${window.location.host}`;
-  const request = new XMLHttpRequest();
-  request.withCredentials = true;
-  request.open("GET", `${baseURL}/login`, true, username, password);
-  request.onerror = (event) => {console.log(event)};
-  request.send();
-}
-
-
-
-
-
-
-
-
-
 
 
 /**
