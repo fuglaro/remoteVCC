@@ -7,6 +7,7 @@ import {attachKeyboard} from './clientkeyboard.js';
 // Signalling server for connection negotiation.
 var router;
 
+
 /**
  * Register with the signalling system (router) and
  * connect all streams with the server including
@@ -15,10 +16,15 @@ var router;
 async function connect() {
   setStatus("<b>Connecting</b><br>Please wait...");
 
-  // Get the RTC Configs.
+  // Close any existing router connections
+  if (router) router.close();
+
+
+  // Get the server configs.
   const baseURL = `${window.location.protocol}//${window.location.host}`;
   const config = await fetch(
     `${baseURL}/api/config`).then(r => r.json());
+
 
   // Connect up the the signalling server,
   // authenticating in the query parameters.
@@ -26,48 +32,63 @@ async function connect() {
     `wss://${window.location.host}/signal/client?auth=${
       document.getElementById("secret").value
     }`);
-  router.onerror = (event) => { setStatus("Connection Failed.", 2); };
+  // Connect a temporary Connection Failed message
+  router.onerror = (event) => {setStatus("Connection Failed.", 2);};
+  // Ready router message handling.
+  router.onmessage = async (event) => {
+    const msg = JSON.parse(event.data);
+    // If the server came online, attempt connection.
+    if (msg.type == 'server-alive') signal.request();
+    // Otherwise its a signalling message.
+    else signal.handleMessage(msg);
+  }
+  // Request connection in case the server is already waiting.
+  router.onopen = (event) => {
+    signal.request();
+    setStatus("<b>Connecting</b><br>Waiting for server...");
+  };
 
-  var routerSend = (message) => { router.send(message) };
 
   // Swap to a peer-to-peer signal stream to
   // negotiate other peer-to-peer connetions.
-  const signal = new PeerStream('signal', routerSend, config.rtc);
-  var signalStream;
-  signal.connection.ondatachannel = (event) => {
-    signalStream = event.channel;
-    signalStream.onopen = (openEvent) => {
+  const routerMsg = (message) => {router.send(message)};
+  const signal = new PeerStream('signal', routerMsg, config.rtc);
+  signal.connection.ondatachannel = (signalling) => {
+    signalling.channel.onopen = (e) => {
       setStatus("<b>Connecting</b><br>Please wait...");
+
       // Close the websocket connection and login system
       // when it is no longer needed.
       router.close();
       document.getElementById("loginForm").style.display = "none";
-      // Prepare a callback for when all connections are established.
+
+
+      // Prepare a callback counting waiting connections,
+      // so we can let the user know its all ready to go.
       var connectionsWaiting = 0;
-      var pushCallbackWaiting = () => {
+      var pushWaitingCallback = () => {
         connectionsWaiting++;
         return () => {
           connectionsWaiting--;
-          if (!connectionsWaiting) {
-            // Everything has connected!
-            setStatus('');
-          }
+          // Let the user know when everything has connected.
+          if (!connectionsWaiting) setStatus('');
         }
       }
 
-      // Ready connections.
-      var signalSend = (message) => {signalStream.send(message)};
-      const screen = new PeerStream('screen', signalSend, config.rtc);
-      const pointer = new PeerStream('pointer', signalSend, config.rtc);
-      const keyboard = new PeerStream('keyboard', signalSend, config.rtc);
+      // Ready streams for connection.
+      const signalMsg = (message) => {signalling.channel.send(message)};
+      const screen = new PeerStream('screen', signalMsg, config.rtc);
+      const pointer = new PeerStream('pointer', signalMsg, config.rtc);
+      const keyboard = new PeerStream('keyboard', signalMsg, config.rtc);
 
+      // Attach the stream handlers.
       const display = document.querySelector('#display');
-      attachScreen(screen.connection, display, pushCallbackWaiting());
-      attachPointer(pointer.connection, display, pushCallbackWaiting());
-      attachKeyboard(keyboard.connection, display, pushCallbackWaiting());
+      attachScreen(screen.connection, display, pushWaitingCallback());
+      attachPointer(pointer.connection, display, pushWaitingCallback());
+      attachKeyboard(keyboard.connection, display, pushWaitingCallback());
 
       // Ready signalling message handling.
-      signalStream.onmessage = async (event) => {
+      signalling.channel.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
         switch (msg.stream) {
           case 'screen':
@@ -87,26 +108,11 @@ async function connect() {
       pointer.request();
       keyboard.request();
     }
-    signalStream.onclose = (event) => { connect(); };
-  }
 
-  // Ready router server messages (initial signalling).
-  router.onmessage = async (event) => {
-    const msg = JSON.parse(event.data);
-    // The server came online, reconnect!
-    if (msg.type == 'server-alive') {
-      signal.request();
-    }
-    else {
-      signal.handleMessage(msg);
-    }
+    // Try to reconnect through the router if we lose the
+    // peer-to-peer signal connection.
+    signalling.channel.onclose = (e) => {connect();};
   }
-
-  // Request connection in case the server is already online.
-  router.onopen = (event) => {
-    signal.request();
-    setStatus("<b>Connecting</b><br>Waiting for server...");
-  };
 }
 
 

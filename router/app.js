@@ -10,7 +10,7 @@ process.chdir(__dirname); // Server relative to this file.
 /**
  * Configurable parameters.
  */
-const PORT = process.env.PORT || "8080";
+const PORT = process.env.PORT || "4433";
 const ICE_SERVERS = process.env.ICE_SERVERS || 'stun:stun.example.org';
 const TLS_KEY_FILE = process.env.TLS_KEY;
 const TLS_CERT_FILE = process.env.TLS_CERT;
@@ -65,8 +65,8 @@ console.log(`Please connect using Connection Key: ${
 /**
  * Webpage service
  */
-// Serve the client app.
 var app = express();
+// Serve the client app.
 app.get('/', (req, res) => {
   res.sendFile('public/client/client.html', { root: __dirname });
 });
