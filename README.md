@@ -15,10 +15,10 @@ Remote desktop solution - building on WebRTC, modern media codecs, hardware enco
 
 **Note that this is still in development and would then need full regression tests and a security audit before it could be considered secure in any way. Imagine one person implemented this when at home feeling really unwell. Also note the need for a security audit of the whole dependency chain.**
 
-Communication between the client and server is first established through the router service. This relies on WSS connections and therefore has a need for digital certificates. When the router is running in Web Mode and isn't just using its own host as the server, this should be via a certificate authority. When running Direct Mode, and you have control of both your client and your server, or you are inside a trusted network, you can have the router create your own self-signed certificate (SHA256 signed, 2048 bit RSA cert, valid for a year).
+Communication between the client and server is first established through the router service. This relies on WSS connections and therefore has a need for digital certificates. When the router is running in Web Mode and isn't just using its own host as the server, this should be via a certificate authority. When running Direct Mode, and you have control of both your client and your server, or you are inside a trusted network, you can use your own self-signed certificate.
 
 Communication is established as follows:
-* In Web Mode, the router is set up with a digital certificate registered with a certificate authority. In Direct Mode, inside a secure environment, the router can alternatively be set up with a self signed certificate.
+* The router is set up with a digital certificate registered wither with a certificate authority, or self signed.
 * Connections to the router are made via HTTPS and WSS. Connections without TLS are denied by the router.
 * A JSON Web Token (created with HMAC-SHA512 using a 2048 bit random key) is obtained. Web Mode requires an OAuth2 service for authentication, before returning a short lived JWT, while Direct Mode outputs to the console a permanent JWT for manual collection at launch.
 * A new WSS WebSocket connection is authenticated as it is establised (before the connection upgrade) by sending the JSON Web Token as the access_token.
@@ -29,6 +29,39 @@ Communication is established as follows:
  1. **todo** design and implement WebMode.
 
 ## Goals
+
+### Server Features
+
+| | Test Server | Linux | Window | MacOS | Raspberry Pi 4 |
+|---|---|---|---|---|---|
+|**Shared<br>Connections** | ✔ |  ☐ | ☐ | ☐ | ☐ |
+|**Video**| ✔ | ☐ | ☐ | ☐ | ☐ |
+|**Keyboard**| ✔ | ☐ | ☐ | ☐ | ☐ |
+|**Mouse**| ✔ | ☐ | ☐ | ☐ | ☐ |
+|**Gamepads**| ☐ | ☐ | ☐ | ☐ | ☐ |
+|**Copy Buffer**| ☐ | ☐ | ☐ | ☐ | ☐ |
+|**Microphone<br>Input** | ☐ | ☐ | ☐ | ☐ | ☐ |
+|**Camera<br>Input** | ☐ | ☐ | ☐ | ☐ | ☐ |
+|**Buffered<br>Media<br>Playback**| ☐ | ☐ | ☐ | ☐ | ☐ |
+|**Wacom**| ☐ | ☐ | ☐ | ☐ | ☐ |
+
+### Router Features
+
+| | NodeJS Router<br>(Web Mode) | Inbuilt Router<br>(Direct Mode) |
+|---|---|---|
+| **Shared<br>Connections** | ✔ | ☐ |
+| **Manual<br>JWT Auth** | ✔ | ☐ |
+| **Multiple<br>Servers** | ☐ | ✘ |
+| **OAuth2** | ☐ | ✘ |
+
+### Client Features
+
+| | Web Client | Linux | Window | MacOs | Raspberry Pi 4<br>(Thin Client) |
+|---|---|---|---|---|---|
+| **Video** | ✔ | ☐ | ☐ | ☐ | ☐ |
+| **Keyboard** | ✔ | ☐ | ☐ | ☐ | ☐ |
+| **Mouse** | ✔ | ☐ | ☐ | ☐ | ☐ |
+| **...** | ☐ | ☐ | ☐ | ☐ | ☐ |
 
 ### Fundamental Ideals and Goals
 
@@ -50,3 +83,4 @@ This project aims to find an opportunity for repurposing existing technology to 
 * Codecs may currently be optimised for media compression rather than tuned to take advantage of typical desktop video. While media playback is important, are there video codecs that can take advantage of patterns like static regions, text areas, or vertically scrolling regions? Does common hardware include these encoders? Systems like VNC and RDP deeply inspect graphics contexts for optimisations rather than just streaming final images. This will need to outpace that without those complexities.
 * Hardware encoder support is limitted. Which devices need specific implementations? Are there implications to reserving the device from other applications? Which codecs are supported? Can this be simplified into a simple gstreamer plugin that can be combined with framebuffer capture on the same device without overheads of memory copies? Which devices support this? Does a fallback to software allow for low enough latency and resource consumption?
 * Do WebRTC implementations allow for latencies low enough for user interaction? Video conferencing requires sub-second latency but smooth user interaction may have higher demands.
+* Small is better. If this is to out compete then it needs to be low overhead. The server needs to run with as little overhead as possible, particularly in regards to memory. Ideally the client can run effectively on something super cheap like the Raspberry Pi Zero but that may be an alternative client rather than the Browser client.

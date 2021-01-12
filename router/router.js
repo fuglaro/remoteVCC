@@ -4,7 +4,7 @@ const express = require('express');
 const WebSocket = require('ws');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const forge = require('node-forge');
+const { exit } = require('process');
 process.chdir(__dirname); // Server relative to this file.
 
 /**
@@ -27,30 +27,23 @@ if (TLS_KEY_FILE && TLS_CERT_FILE) {
   tlsCert = fs.readFileSync(TLS_CERT_FILE);
 }
 else {
-  // Automatically generate TLS credentials.
-  function createSelfSignedCertAndKey() {
-    // generate a keypair and create an X.509v3 certificate
-    const keys = forge.pki.rsa.generateKeyPair(2048);
-    var cert = forge.pki.createCertificate();
-    cert.publicKey = keys.publicKey;
-    cert.serialNumber = `00${crypto.randomBytes(18).toString('hex')}`;
-    // Expire it in a year.
-    cert.validity.notAfter.setFullYear(
-      cert.validity.notBefore.getFullYear() + 1);
-    var attrs = [
-      {name: 'commonName', value: `AutoCertRemovid-${
-        crypto.randomBytes(256).toString('hex')
-      }`},
-      {name: 'organizationName', value: 'Unknown'},
-    ];
-    cert.setSubject(attrs);
-    cert.setIssuer(attrs);
-    cert.sign(keys.privateKey, forge.md.sha256.create());
-    return [forge.pki.certificateToPem(cert),
-      forge.pki.privateKeyToPem(keys.privateKey)];
-  }
-  [tlsCert, tlsKey] = createSelfSignedCertAndKey();
-  console.log(`Using automatically made TLS certificate:\n${tlsCert}`);
+  console.log(`
+  Please provide a TLS Certificate and Private Key.
+  This can be a self signed certificate.
+  Here is an example of creating them on Linux using OpenSSL:
+
+    openssl req -x509 -newkey rsa:2048 -keyout ~/.removid_private.pem\
+  -out ~/.removid_cert.pem -nodes -subj '/CN=...removid...'\
+  -addext "subjectAltName = DNS:localhost, DNS:\`hostname\`,\
+  IP:127.0.0.1, IP:\`hostname -I\`"
+
+  Pass the credentials to removid via the environment:
+
+    TLS_KEY=~/.removid_private.pem
+    TLS_CERT=~/.removid_cert.pem
+
+  `);
+  exit(-1);
 }
 
 /**
