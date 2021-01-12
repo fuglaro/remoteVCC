@@ -84,3 +84,9 @@ This project aims to find an opportunity for repurposing existing technology to 
 * Hardware encoder support is limitted. Which devices need specific implementations? Are there implications to reserving the device from other applications? Which codecs are supported? Can this be simplified into a simple gstreamer plugin that can be combined with framebuffer capture on the same device without overheads of memory copies? Which devices support this? Does a fallback to software allow for low enough latency and resource consumption?
 * Do WebRTC implementations allow for latencies low enough for user interaction? Video conferencing requires sub-second latency but smooth user interaction may have higher demands.
 * Small is better. If this is to out compete then it needs to be low overhead. The server needs to run with as little overhead as possible, particularly in regards to memory. Ideally the client can run effectively on something super cheap like the Raspberry Pi Zero but that may be an alternative client rather than the Browser client.
+
+
+## Dependencies
+### Included
+https://github.com/zserge/jsmn
+### Linked

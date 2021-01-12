@@ -12,32 +12,32 @@ Here is the flow of communcation between a client and the server for any type of
 1. Client requests the data stream:
     ```json
     {
-        type: "request",
-        stream: "pointer"
+        "type": "request",
+        "stream": "pointer"
     }
     ```
 2. Server and Client exchange ICE Candidates until a WebRTC communication can be established:
     ```json
     {
-        type: "ice-candidate",
-        stream: "pointer",
-        payload: ...(ICE candidate details)...
+        "type": "ice-candidate",
+        "stream": "pointer",
+        "payload": ...(ICE candidate details)...
     }
     ```
 3. Server offers a SDP description for the stream:
     ```json
     {
-        type: "offer",
-        stream: "pointer",
-        payload: ...(SDP description details)...
+        "type": "offer",
+        "stream": "pointer",
+        "payload": ...(SDP description details)...
     }
     ```
 4. Client responds with its own SDP description:
     ```json
     {
-        type: "answer",
-        stream: "pointer",
-        payload: ...(SDP description details)...
+        "type": "answer",
+        "stream": "pointer",
+        "payload": ...(SDP description details)...
     }
     ```
 
@@ -45,37 +45,48 @@ This enables the communication stream to be established and further communicatio
 
 ### Additional Router Messaging
 
-The very first connection between a client and the server runs through the router and the router handles some additional messaging. Each client and the server then uses that connection as the signalling server to establish a peer-to-peer data stream to act as a trusted signalling channel for any further peer-to-peer connections.
+When using a Web Mode router, the very first connection between a client and a server runs through the router and the router handles some additional messaging details. Each client and the server then uses that connection as the signalling server to establish a peer-to-peer data stream to act as a trusted signalling channel for any further peer-to-peer connections.
 
-This means that this first connection has additional messages and message packaging:
+This means that this first connection through the router has additional messages and message information:
 
 * When the server first connects to the router, it will send a broadcast message for all clients already waiting (if any) that the server is now ready for requests:
     ```json
     {
-        client-id: "broadcast",
-        message: "{type:\"server-alive\"}"
+        "client-id": "broadcast",
+        "type": "server-alive"
     }
     ```
-* Whenever the router forwards messages from clients to the server, the router will assign each client a unique identifier and package the client's message with the appropriate client ID:
+* Whenever the router forwards messages from clients to the server, the router will assign each client a unique identifier and include the client's ID:
     * Client asks the router to request the signalling data stream:
         ```json
         {
-            type: "request",
-            stream: "signal"
+            "type": "request",
+            "stream": "signal"
         }
         ```
     * Router packages that with the client ID before sending to the server:
         ```json
         {
-            client-id: 11,
-            message: "{type:\"request\",stream:\"signal\"}"
+            "client-id": 11, // Added by router
+            "type": "request",
+            "stream": "signal"
         }
         ```
-    * The server can then upnack the client's message after idenifying the client. Servers then reply to the client via the router by similarly packaging messages.
+    * The server can then recieve the client's message and also be able to idenifying the client. Servers then reply to the client via the router by similarly lacing the messages.
         ```json
         {
-            client-id: 11,
-            message: ...Message to client...
+            "client-id": 11, // Included in responses by server
+            "type": "offer",
+            "stream": "pointer",
+            "payload": ...(SDP description details)...
         }
         ```
-    * The router will unpack the message before sending it to the relevant client.
+    * The router will strip the client ID information from the message before sending it to the relevant client.
+        ```json
+        {
+            /* Client ID stripped by router */
+            "type": "offer",
+            "stream": "pointer",
+            "payload": ...(SDP description details)...
+        }
+        ```

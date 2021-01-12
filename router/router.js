@@ -90,13 +90,19 @@ wss.on('connection', (ws, request) => {
     ws.on('close', (event) => { server = null; });
     ws.on('message', (message) => {
       // Unwrap the message and send to the appropriate clients.
-      var data = JSON.parse(message);
+      try { var data = JSON.parse(message); }
+      catch (e) /*ignore invalid json*/ { return }
       if (data['client-id'] == 'broadcast') {
+        /* We don't need to tell the client who they are. */
+        delete data['client-id'];
         Object.values(clients).forEach(
-          (client) => { client.send(data['message']); });
+          (client) => { client.send(JSON.stringify(data)); });
       }
       else if (data['client-id'] in clients) {
-        clients[data['client-id']].send(data['message']);
+        var clientID = data['client-id'];
+        /* We don't need to tell the client who they are. */
+        delete data['client-id'];
+        clients[clientID].send(JSON.stringify(data));
       }
     });
   }
@@ -107,12 +113,12 @@ wss.on('connection', (ws, request) => {
     ws.on('close', (event) => { delete clients[connectionNumber]; });
     ws.on('message', (message) => {
       if (server) {
-        // Wrap the message so the server knows which client
+        // Lace the message so the server knows which client
         // to respond back to.
-        server.send(JSON.stringify({
-          'client-id': connectionNumber,
-          'message': message
-        }));
+        try { var data = JSON.parse(message); }
+        catch (e) /*ignore invalid json*/ { return }
+        data['client-id'] = connectionNumber;
+        server.send(JSON.stringify(data));
       }
     });
   }

@@ -37,19 +37,18 @@ async function connect() {
   // Initialise the signal message handlers,
   // authenticating in the query parameters.
   router.onmessage = async (event) => {
-    // Unwrap the message from the router
+
+    // Parse the message from the router
     // to keep track of the client ID.
-    const packagedMsg = JSON.parse(event.data);
-    const clientId = packagedMsg['client-id'];
+    const msg = JSON.parse(event.data);
+    const clientId = msg['client-id'];
     const signal = `${clientId}:signal`;
-    const msg = JSON.parse(packagedMsg['message']);
-    // Get ready to re-wrap the message with details
+    // Get ready to re-lace the message with details
     // about which client to send back to.
     var routerSend = (message) => {
-      router.send(JSON.stringify({
-        'client-id': clientId,
-        'message': message
-      }));
+      data = JSON.parse(message);
+      data['client-id'] = clientId;
+      router.send(JSON.stringify(data));
     }
 
     // Signal stream.
@@ -99,7 +98,7 @@ async function connect() {
     // Send "server-alive" ping in case any client has been waiting.
     router.send(JSON.stringify({
       'client-id': 'broadcast',
-      'message': JSON.stringify({ type: 'server-alive' })
+      'type': 'server-alive'
     }));
   }
 }
