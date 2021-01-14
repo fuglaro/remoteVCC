@@ -2,6 +2,17 @@
  * Connection logic for the keyboard.
  */
 
+/**
+ * Connect the keyboard input events associated
+ * with the provided canvas to the data stream
+ * when it is ready.
+ *
+ * @param {RTCPeerConnection} connection The connection that will
+ *                                       get a data channel.
+ * @param {HTMLElement} canvas Where to listen for events.
+ * @param {function} onconnected Callback that is called when the
+ *                               data channel is established.
+ */
 function attachKeyboard(connection, canvas, onconnected) {
 
   // Ready the send of keyboard events.
