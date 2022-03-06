@@ -1,6 +1,6 @@
-# REMOVID
+# RemoteVCC
 
-Remote desktop solution - building on WebRTC, modern media codecs, hardware encoders, and gstreamer for an open source, fast and secure interface to remote workstations. A simple reuse of already advancing technologies. It is unlikely that this can compete with video-game streaming solutions for quite a while but it should still be considered a goal.
+Remote desktop solution (Remote Virtually Controlled Computer) - building on WebRTC, modern media codecs, hardware encoders, and gstreamer for an open source, fast and secure interface to remote workstations. A simple reuse of already advancing technologies. It is unlikely that this can compete with video-game streaming solutions for quite a while but it should still be considered a goal.
 
 [![Demo Video](removid_demo_20210107.gif)
 
