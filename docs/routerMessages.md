@@ -53,7 +53,7 @@ This means that this first connection through the router has additional messages
     ```json
     {
         "client-id": "broadcast",
-        "type": "server-alive"
+        "type": "server-ready"
     }
     ```
 * Whenever the router forwards messages from clients to the server, the router will assign each client a unique identifier and include the client's ID:

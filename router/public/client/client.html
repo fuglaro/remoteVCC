@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8">
-        <title>Removid</title>
+        <title>RemoteVCC</title>
         <style>
             html, body {
                 overflow: hidden;
@@ -27,15 +27,13 @@
                 background-color: white;
                 z-index: 10;
             }
-            .form input[type=text],
-            .form input[type=password] {
+            .form input {
                 width: 100%;
                 padding: 15px;
                 margin: 5px 0 15px 0;
                 background: #F1F1F1;
             }
-            .form input[type=text]:focus,
-            .form input[type=password]:focus {
+            .form input:focus {
                 background-color: #ddd;
             }
             .form button {
@@ -71,19 +69,13 @@
         </style>
     </head>
     <body>
-        <label id="statusMessage">
-            Status Message
-        </label>
+        <label id="statusMessage"></label>
         <div class="form" id="loginForm">
-            <label><b>Connection Key</b></label>
-            <input id="secret" type="password" placeholder="connection key">
-            <button onclick="connect()">Login</button>
+            <input id="secret" type="password" placeholder="Connection Key">
+            <button id="start">Login</button>
         </div>
         <video id="display" autoplay></video>
-        <script type="module">
-            import {connect} from './client/client.js';
-            window.connect = connect;
-        </script>
+        <script src="client/client.js"/></script>
     </body>
 </html>
 

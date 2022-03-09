@@ -1,11 +1,15 @@
 # RemoteVCC
 
-Remote desktop solution (Remote Virtually Controlled Computer) - building on WebRTC, modern media codecs, hardware encoders, and gstreamer for an open source, fast and secure interface to remote workstations. A simple reuse of already advancing technologies. It is unlikely that this can compete with video-game streaming solutions for quite a while but it should still be considered a goal.
+Remote Virtually Connected Computing) - A remote desktop solution building on WebRTC, modern media codecs, hardware encoders, and gstreamer for an open source, fast and secure interface to remote workstations. A simple reuse of already advancing technologies. It is unlikely that this can compete with video-game streaming solutions for quite a while but it should still be considered a goal.
 
 [![Demo Video](removid_demo_20210107.gif)
 
 
+## TODO
 1. **todo** have a server with virtual devices to control the remote machine.
+2. really should have a separate connection key for the server (don't want clients to pretend to be servers to get signalling info).
+3. include stun server with the router for local connections
+4. better pointerlock mechanism on client
 
 ## Protocols
 

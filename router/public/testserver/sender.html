@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8">
-        <title>REMOVID TEST SENDER</title>
+        <title>RemoteVCC TEST SERVER</title>
         <style>
             #display {
                 object-fit: contain;
@@ -15,13 +15,15 @@
                 background-color:rgba(0,0,0,0);
                 z-index: 10;
             }
+            #fakeDisplay {
+                position: absolute;
+                z-index: -1;
+            }
         </style>
     </head>
     <body onresize="resizeCanvas()">
-        <label>Connection Key:</label>
-        <input type="password" id="secret"/>
-        <input type="checkbox" id="realData"/><label>Real Data</label>
-        <br/>
+        <input type="checkbox" id="realData"/><label>Screenshare</label>
+        <input type="password" id="secret" placeholder="Connection Key"/>
         <button id="start">Start</button>
         <canvas id="fakeDisplay" width="30" height="20"></canvas>
         <label id="keys"></label>
@@ -30,17 +32,25 @@
         <canvas id="canvas"></canvas>
         <script src="sender.js"></script>
         <script>
-            /**
-             * Snap draw canvas over video (for pointer display)
-             */
-            function resizeCanvas() {
-                const video = document.getElementById("display");
-                const canvas = document.getElementById("canvas");
-                canvas.style.left = video.offsetLeft + 'px';
-                canvas.style.top = video.offsetTop + 'px';
-                canvas.width = video.offsetWidth;
-                canvas.height = video.offsetHeight;
-            }
+          // Snap canvases over video (for virtual pointer and fake display)
+          const video = document.getElementById("display");
+          const c = document.getElementById("canvas");
+          const fc = document.getElementById("fakeDisplay");
+          function resizeCanvas() {
+            fc.style.left = c.style.left = video.offsetLeft + 'px';
+            fc.style.top = c.style.top = video.offsetTop + 'px';
+            fc.width = c.width = video.offsetWidth;
+            fc.height = c.height = video.offsetHeight;
+          }
+          resizeCanvas()
+          // Initiate the fake display animation
+          const ctx = fc.getContext('2d');
+          function drawVid() {
+            const t = (new Date()).getTime()
+            ctx.fillStyle = `rgb(${t/50%255},${t/33%255},${t/488%255})`;
+            ctx.fillText("RemoteVCC", t/100%fc.clientWidth, t/9%fc.clientHeight)
+          }
+          setInterval(drawVid, 99);
         </script>
     </body>
 </html>
