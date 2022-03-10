@@ -13,7 +13,7 @@ Remote Virtually Connected Computing) - A remote desktop solution building on We
 
 ## Protocols
 
-* [Signaling protocol](docs/routerMessages.md)
+* [Signaling protocol](docs/protocols.md)
 
 ## Communication Security
 

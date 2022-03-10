@@ -117,8 +117,8 @@ The input device events are sent over the "input" data channel of the peer-to-pe
 {
     "type": "wheel",
     "step": "lines",
-    x: 0,
-    y: 1,
-    z: 0
+    "x": 0,
+    "y": 1,
+    "z": 0
 }
 ```
