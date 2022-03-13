@@ -13,7 +13,7 @@ As this is in active development, some features are incomplete. Please see the s
 * **Encryption**:
   * Encryption for all connection establishment and authentication communication between the Client, Router (if used), and Host; utilising TLS with HTTPS and WSS.
   * End-to-end encryption for all data streaming including display and input between Client and Host (DTLS-SRTP with WebRTC). Note that the Router (if used) needs to be trusted for the initiating key exchange.
-	* Enforced Digital Certificate based authentication of the Host or Router.
+  * Enforced Digital Certificate based authentication of the Host or Router.
 
 * **Host Login Sxpport**: Optionally allow new login sessions with the host's user login credentials, which must be provided by the client. If the host supports multiple active virtual sessions, these can be requested by the client. Connections to active sessions from different users are denied. Must be run as admin.
 
@@ -23,7 +23,7 @@ As this is in active development, some features are incomplete. Please see the s
 
 * **Network Traversal Options**:
   * **Via a Host Port**: The Host will listen for client connections on the local network on a specified port. This allows connectivity across a local netowrk or through port forwarding.
-	* **Via a Router on the Web**: Utilises a Router service running on the internet, accessible to both the Host and Client to allow the Client to connect to the Host over the internet, even if the Host behind a typical firewall. This allows connectivity over the internet without port forwarding. This behaves similar to screen sharing on typical video conferencing solutions but with the additional features of RemoteVCC. The Host will make a persistent, unique and unguessable host identifier, which is registered with the Router, for clients to connect via.
+  * **Via a Router on the Web**: Utilises a Router service running on the internet, accessible to both the Host and Client to allow the Client to connect to the Host over the internet, even if the Host behind a typical firewall. This allows connectivity over the internet without port forwarding. This behaves similar to screen sharing on typical video conferencing solutions but with the additional features of RemoteVCC. The Host will make a persistent, unique and unguessable host identifier, which is registered with the Router, for clients to connect via.
 
 * **Simple Command-Line Tools**:
   * remoteVCChost:
