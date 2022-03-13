@@ -38,23 +38,36 @@ Example for connecting over the internet:
 
 --with-login: Allow login sessions on the Host. Must be run as admin. 
 
---via-router=[router url]: Makes a persistent, unique and unguessable host identifier, which is registered with the remoteVCC router, and also printed as a client connection URL for clients to connect via. In some scenarios the router address may be different for the client. Note that the router service needs to be trusted.
+--via-router=[router url]: Makes a persistent, unique and unguessable host
+    identifier, which is registered with the remoteVCC router, and also
+    printed as a client connection URL for clients to connect via. In some
+    scenarios the router address may be different for the client. Note that
+    the router service needs to be trusted.
 
---via-port=[port number]: Listens for client connections on the local network through this port. This changes the local network client connection URL that is printed.
+--via-port=[port number]: Listens for client connections on the local network
+    through this port. This changes the local network client connection URL
+    that is printed.
 
---tls-certificate=[certificate file]: (required with --through-port) Use a specific certificate file to establish encrypted communication. This certificate should be registered with a certificate authority or with the client itself.
+--tls-certificate=[certificate file]: (required with --through-port) Use a
+    specific certificate file to establish encrypted communication. This
+    certificate should be registered with a certificate authority or with
+    the client itself.
 
 ```
   * remoteVCCrouter:
 ```
-Negotiate connectivity between clients and hosts establishing the streams even when the Client can't directly access the Host. 
+Negotiate connectivity between clients and hosts establishing the streams
+even when the Client can't directly access the Host. 
 
 Example:
     remoteVCCrouter --tls-certificate=.local/share/remoteVCC/cert.pem
 
---through-port=[port number] (default:43755): Listens for client connections through this port.
+--through-port=[port number] (default:43755): Listens for client connections
+    through this port.
 
---tls-certificate=[certificate file]: (required) Use a specific certificate file to establish encrypted communication. This certificate should be registered with a certificate authority or with the client itself.
+--tls-certificate=[certificate file]: (required) Use a specific certificate
+    file to establish encrypted communication. This certificate should be
+    registered with a certificate authority or with the client itself.
 ```
   * remoteVCCkeys:
 ```
