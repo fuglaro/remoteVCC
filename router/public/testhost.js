@@ -8,6 +8,19 @@ var streams = {};
 var screenStream;
 
 
+
+// TODO move the host key identifier and connection key generation here
+/*
+
+function getRandom192bitKey() {
+  var a = new Uint8Array(192/8);
+  window.crypto.getRandomValues(a);
+  return btoa(String.fromCharCode.apply(null, a)); // base64
+}
+
+ */
+
+
 /**
  * Register with the router system and listen for
  * client connections to then connect a client stream.
