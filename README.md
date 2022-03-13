@@ -4,20 +4,31 @@ Remote Virtually Connected Computing - A simple, secure, featureful, and fast re
 
 [![Demo Video](removid_demo_20210107.gif)
 
-**Note that while secirity is a top priority for this projecct, it is still in development and would then need full regression tests and a security audit before it could be considered secure in any way. Also note the need for a security audit of the whole dependency chain.**
+*Note that while secirity is a top priority for this projecct, it is still in development and would then need full regression tests and a security audit before it could be considered secure in any way. Also note the need for a security audit of the whole dependency chain.*
 
 ## Features
 
-As this is in active development, the some features are incomplete. Please see the status tables below for further details.
+As this is in active development, some features are incomplete. Please see the status tables below for further details.
 
-* *Encryption*:
+* **Encryption**:
   * Encryption for all connection establishment and authentication communication between the Client, Router (if used), and Host; utilising TLS with HTTPS and WSS.
   * End-to-end encryption for all data streaming including display and input between Client and Host (DTLS-SRTP with WebRTC). Note that the Router (if used) needs to be trusted for the initiating key exchange.
+	* Enforced Digital Certificate based authentication of the Host or Router.
 
+* **Host Login SUpport**: Optionally allow new login sessions with the host's user login credentials, which must be provided by the client. If the host supports multiple active virtual sessions, these can be requested by the client. Connections to active sessions from different users are denied. Must be run as admin.
+
+* **Access Keys**:
+  * A persistent access key is created and must be provided by the client connection to have access granted. This can be provided in the connection URL itself but this may not be secure if connecting from a browser on a public access computer.
+   • Users can create alternate access keys with custom restrictions, for use in place of primary access keys. These are tied to specific login users, and are checked against the active login, so also negate the need for providing login credentials. Note that login credentials may still be needed after connection, if there is a session screen lock. Custom restrictions include granting view-only access, limiting to specific input types, and granting time-limited or one-time access. These are revokable, and can be used to allow a user to share their active session, or to create an access URL specific to their login credentials.
+
+* **Network Traversal Options**:
+  * **Via a Host Port**: The Host will listen for client connections on the local network on a specified port. This allows connectivity across a local netowrk or through port forwarding.
+	* **Via a Router on the Web**: Utilises a Router service running on the internet, accessible to both the Host and Client to allow the Client to connect to the Host over the internet, even if the Host behind a typical firewall. This allows connectivity over the internet without port forwarding. This behaves similar to screen sharing on typical video conferencing solutions but with the additional features of RemoteVCC. The Host will make a persistent, unique and unguessable host identifier, which is registered with the Router, for clients to connect via.
+
+* **Simple Command-Line Tools**:
+  * remoteVCChost:
 ```
-== remoteVCChost ==
-
-A persistent access key is created and must be provided by the client connection to have access granted. This can be provided in the connection URL itself but this may not be secure if connecting from a browser on a public access computer.
+Serve a host for clients to connect to.
 
 Example for connecting on a local network:
     remoteVCChost --through-port=43755 --tls-certificate=.local/share/remoteVCC/cert.pem
@@ -25,18 +36,18 @@ Example for connecting on a local network:
 Example for connecting over the internet:
     remoteVCChost --through-router=https://remotevcc.convex.cc:43755
 
+--with-login: Allow login sessions on the Host. Must be run as admin. 
 
---with-login: Allows new login sessions via the host's user login credentials, which must be provided by the client. If the host supports multiple active virtual sessions, these can be requested by the client. Connections to active sessions from different users are denied. Must be run as admin.
+--via-router=[router url]: Makes a persistent, unique and unguessable host identifier, which is registered with the remoteVCC router, and also printed as a client connection URL for clients to connect via. In some scenarios the router address may be different for the client. Note that the router service needs to be trusted.
 
---through-router=[router url]: Makes a persistent, unique and unguessable host identifier, which is registered with the remoteVCC router, and also printed as a client connection URL for clients to connect via. In some scenarios the router address may be different for the client. Note that the router service needs to be trusted.
-
---through-port=[port number]: Listens for client connections on the local network through this port. This also changes the local network client connection URL that is printed.
+--via-port=[port number]: Listens for client connections on the local network through this port. This changes the local network client connection URL that is printed.
 
 --tls-certificate=[certificate file]: (required with --through-port) Use a specific certificate file to establish encrypted communication. This certificate should be registered with a certificate authority or with the client itself.
 
-
---------------
-== remoteVCCrouter ==
+```
+  * remoteVCCrouter:
+```
+Negotiate connectivity between clients and hosts establishing the streams even when the Client can't directly access the Host. 
 
 Example:
     remoteVCCrouter --tls-certificate=.local/share/remoteVCC/cert.pem
@@ -44,17 +55,13 @@ Example:
 --through-port=[port number] (default:43755): Listens for client connections through this port.
 
 --tls-certificate=[certificate file]: (required) Use a specific certificate file to establish encrypted communication. This certificate should be registered with a certificate authority or with the client itself.
-
---------------
-Future:
-Custom Access Keys:
- • Can create alternate access keys with custom restrictions, to use in place of primary access keys. These are tied to specific login users, and are checked against the active login, so also negate the need for providing login credentials. Note that login credentials may still be needed after connection, if there is a session screen lock. Custom restrictions include granting view-only access, limiting to specific input types, and granting time limited access or one-time access. These are revokable, and can be used to allow a user to share their active session, or to create an access URL specific to their login credentials.
-
-
-
-
 ```
+  * remoteVCCkeys:
+```
+Manage customisable user access keys.
 
+TODO TBC
+```
 
 ### Current Feature Statuses
 
@@ -169,5 +176,6 @@ TODO
 1. include stun service with the router for local connections
 1. Think about third party stun services and GDPR
 1. Sharing of one window only, but also restricting input events to that window only. Probably want a separate command to remoteVCChost
+1. Think about a configurable payload for the Host and Client to send to the Router for alternate Router implementations that have different authentication mechaisms.
 
 
