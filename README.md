@@ -4,7 +4,7 @@ Remote Virtually Connected Computing - A simple, secure, featureful, and fast re
 
 [![Demo Video](removid_demo_20210107.gif)
 
-*Note that while secirity is a top priority for this projecct, it is still in development and would then need full regression tests and a security audit before it could be considered secure in any way. Also note the need for a security audit of the whole dependency chain.*
+*Note that, while security is a top priority for this project, it is still in development and would then need full regression tests and a security audit before it could be considered secure in any way. Also note the need for a security audit of the whole dependency chain.*
 
 ## Features
 
@@ -15,11 +15,11 @@ As this is in active development, some features are incomplete. Please see the s
   * End-to-end encryption for all data streaming including display and input between Client and Host (DTLS-SRTP with WebRTC). Note that the Router (if used) needs to be trusted for the initiating key exchange.
 	* Enforced Digital Certificate based authentication of the Host or Router.
 
-* **Host Login SUpport**: Optionally allow new login sessions with the host's user login credentials, which must be provided by the client. If the host supports multiple active virtual sessions, these can be requested by the client. Connections to active sessions from different users are denied. Must be run as admin.
+* **Host Login Sxpport**: Optionally allow new login sessions with the host's user login credentials, which must be provided by the client. If the host supports multiple active virtual sessions, these can be requested by the client. Connections to active sessions from different users are denied. Must be run as admin.
 
 * **Access Keys**:
   * A persistent access key is created and must be provided by the client connection to have access granted. This can be provided in the connection URL itself but this may not be secure if connecting from a browser on a public access computer.
-   • Users can create alternate access keys with custom restrictions, for use in place of primary access keys. These are tied to specific login users, and are checked against the active login, so also negate the need for providing login credentials. Note that login credentials may still be needed after connection, if there is a session screen lock. Custom restrictions include granting view-only access, limiting to specific input types, and granting time-limited or one-time access. These are revokable, and can be used to allow a user to share their active session, or to create an access URL specific to their login credentials.
+  * Users can create alternate access keys with custom restrictions, for use in place of primary access keys. These are tied to specific login users, and are checked against the active login, so also negate the need for providing login credentials. Note that login credentials may still be needed after connection, if there is a session screen lock. Custom restrictions include granting view-only access, limiting to specific input types, and granting time-limited or one-time access. These are revokable, and can be used to allow a user to share their active session, or to create an access URL specific to their login credentials.
 
 * **Network Traversal Options**:
   * **Via a Host Port**: The Host will listen for client connections on the local network on a specified port. This allows connectivity across a local netowrk or through port forwarding.
