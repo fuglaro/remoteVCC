@@ -129,24 +129,20 @@ TODO TBC
 
 ## Communication Security
 
-Communication between the client and Host is first established through the Router service. This relies on a WSS connection for establishing a direct peer-to-peer communication channel between the Client and the Host and therefore has a need for a digital certificate, which must be provided by either the Host, or the Router (if used). When a Router is used, it is recommended that this digital certificate is registed with a certificate authority, but direct connections to Hosts can use your own self-signed certificate, which can be registered with the Client.
-
-
-
+Communication of data streams between the client and host operate over WebRTC. WebRTC is a peer-to-peer protocol and requires an initial exchange of messages to establish the communication channel and negotiate the parameters. These initial negotiation messages, use a WSS connection, either from the client to the host, or via a router service. This WSS connection requires a digital certificate, which must be provided by either the host, or the router (if used). When a router is used, it is recommended that this digital certificate be registed with a certificate authority, but direct connections to Hosts can use your own self-signed certificate, which can be registered with the client.
 
 Communication is established as follows:
-* The router is set up with a TLS digital certificate registered either with a certificate authority, or self signed.
-* Connections to the router are made via HTTPS and WSS. Connections without TLS are denied by the router.
+1. The router, or host, is set up with a TLS digital certificate registered either with a certificate authority, or self signed and registed with the client.
+1. If a router is used, the host will register with the router with an unguessable host id key and listen via WSS.
+1. The client will connect to the router or host via HTTPS and WSS. Connections without TLS are denied by the router or host.
+1. If a router is ueed, the client will provide the host id key, and the router will proxy further connection establishment messages between the client and the host.
+1. The client will send the host (via the router, if used) an access key, and login credentials if connecting to a host with logins allowed, while requesting to establish the WebRTC stream.
+1. The host will validate the keys and credentials and, if valid, will negotiate the WebRTC connection with the client, (via the router, if used).
+1. Once the WebRTC stream is established between the client and the host, the client will close the WSS connection to the router or host, and the host will continue to listen on WSS for further connection requests.
+1. All further communication of data streams such as display and input events occurs over the established WebRTC connection.
 
+The host and router will track when multiple clients connect to a host, and ensure that the host independently communicates with each client.
 
-* An access key (JSON Web Token created with HMAC-SHA512 using a 2048 bit random key) is obtained. Web Mode requires an OAuth2 service for authentication, before returning an access key, while Direct Mode outputs to the console a permanent JWT for manual collection at launch.
-
-
--- TODO is JWT enough? What about logging in from the client? With Direct Mode to a machine that still needs login.
-
-* New WSS WebSocket connections to the router are authenticated when they are establised (before the connection upgrade) by sending the JSON Web Token as the access_token.
-* This WSS connection is then used to establish a single WebRTC connection between Host and Client.
-* All further communication occurs over WebRTC connections and it's inbuilt security.
 
 ## Protocols
 
