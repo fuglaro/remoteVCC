@@ -68,43 +68,43 @@ Custom Access Keys:
 
 | | Test | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
-|**Video**                | ✔ | ☐ | ☐ | ☐ | ☐ |
-|**Keyboard**             | ✔ | ☐ | ☐ | ☐ | ☐ |
-|**Mouse**                | ✔ | ☐ | ☐ | ☐ | ☐ |
-|**Gamepads**             | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Clipboard**            | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Microphone<br>Input**  | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Camera<br>Input**      | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Wacom**                | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**With<br>Login**        | ✘ | ☐ | ☐ | ☐ | ☐ |
-|**Virtual<br>Sessions**  | ✘ | ☐ | ☐ | ☐ | ☐ |
-|**Shared<br>Access**     | ✔ | ☐ | ☐ | ☐ | ☐ |
-|**Through<br>Port**      | ✘ | ☐ | ☐ | ☐ | ☐ |
-|**Through<br>Router**    | ✔ | ☐ | ☐ | ☐ | ☐ |
+|**Video**                | ✔ |   |   |   |   |
+|**Keyboard**             | ✔ |   |   |   |   |
+|**Mouse**                | ✔ |   |   |   |   |
+|**Gamepads**             |   |   |   |   |   |
+|**Clipboard**            |   |   |   |   |   |
+|**Microphone<br>Input**  |   |   |   |   |   |
+|**Camera<br>Input**      |   |   |   |   |   |
+|**Wacom**                |   |   |   |   |   |
+|**With<br>Login**        | ✘ |   |   |   |   |
+|**Virtual<br>Sessions**  | ✘ |   |   |   |   |
+|**Shared<br>Access**     | ✔ |   |   |   |   |
+|**Through<br>Port**      | ✘ |   |   |   |   |
+|**Through<br>Router**    | ✔ |   |   |   |   |
 
 #### Host Security Features
 
 | | Test | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
-|**View Only<br>Access**   | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Input<br>Restrictions** | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**One-Time<br>Access**    | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Time-Limited<br>Access**| ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Clipboard<br>Limits**   | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Watermarking**          | ☐ | ☐ | ☐ | ☐ | ☐ |
+|**View Only<br>Access**   |   |   |   |   |   |
+|**Input<br>Restrictions** |   |   |   |   |   |
+|**One-Time<br>Access**    |   |   |   |   |   |
+|**Time-Limited<br>Access**|   |   |   |   |   |
+|**Clipboard<br>Limits**   |   |   |   |   |   |
+|**Watermarking**          |   |   |   |   |   |
 
 #### Client Features
 
 | | Web | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
-|**Video**              | ✔ | ☐ | ☐ | ☐ | ☐ |
-|**Keyboard**           | ✔ | ☐ | ☐ | ☐ | ☐ |
-|**Mouse**              | ✔ | ☐ | ☐ | ☐ | ☐ |
-|**Gamepads**           | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Copy Buffer**        | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Microphone<br>Input**| ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Camera<br>Input**    | ☐ | ☐ | ☐ | ☐ | ☐ |
-|**Wacom**              | ☐ | ☐ | ☐ | ☐ | ☐ |
+|**Video**              | ✔ |   |   |   |   |
+|**Keyboard**           | ✔ |   |   |   |   |
+|**Mouse**              | ✔ |   |   |   |   |
+|**Gamepads**           |   |   |   |   |   |
+|**Copy Buffer**        |   |   |   |   |   |
+|**Microphone<br>Input**|   |   |   |   |   |
+|**Camera<br>Input**    |   |   |   |   |   |
+|**Wacom**              |   |   |   |   |   |
 
 
 ## Communication Security
