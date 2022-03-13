@@ -1,7 +1,7 @@
 {
-  "name": "removid_router",
+  "name": "test_remoteVCC_router",
   "version": "1.0.0",
-  "description": "Connects clients with removid servers.",
+  "description": "Connects clients with remoteVCC hosts.",
   "main": "app.js",
   "dependencies": {
     "express": "^4.17.1",

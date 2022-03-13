@@ -1,63 +1,63 @@
 
 # Router Messaging and Signalling Protocol
 
-Communication protocol for establishing the peer-to-peer streem between the client and server. This is communicated via the router over WebSocket connections from both the Server and Clients.
+Communication protocol for establishing the peer-to-peer streem between the client and host. This is communicated via the router over WebSocket connections from both the Host and Clients.
 
-1. Server -> Router -> Client (optionally if the client is already waiting):
+1. Host -> Router -> Client (optionally if the client is already waiting):
 ```json
 {
-    "type": "server-ready",
+    "type": "host-ready",
     "client-id": "broadcast"
 }
 ```
-2. Client -> Router -> Server (client requests the stream):
+2. Client -> Router -> Host (client requests the stream):
 ```json
 {
     "type": "request",
-    "client-id": 1, // Added by router
+    "client-id": "1", // Added by router
 }
 ```
 
-3. Server -> Router -> Client (server offers WebRTC ICE Candidate connection information):
+3. Host -> Router -> Client (host offers WebRTC ICE Candidate connection information):
 ```json
 {
     "type": "ice-candidate",
-    "client-id": 1,
+    "client-id": "1",
     "payload": ...(ICE candidate details)...
 }
 ```
 
-4. Client -> Router -> Server (client relies with WebRTC ICE Candidate connection information):
+4. Client -> Router -> Host (client relies with WebRTC ICE Candidate connection information):
 ```json
 {
     "type": "ice-candidate",
-    "client-id": 1, // Added by router
+    "client-id": "1", // Added by router
     "payload": ...(ICE candidate details)...
 }
 ```
-5. Server -> Router -> Client (server offers am SDP description for the stream):
+5. Host -> Router -> Client (host offers am SDP description for the stream):
 ```json
 {
     "type": "offer",
-    "client-id": 1,
+    "client-id": "1",
     "payload": ...(SDP description details)...
 }
 ```
-6. Client -> Router -> Server (client responds with its own SDP description):
+6. Client -> Router -> Host (client responds with its own SDP description):
 ```json
 {
     "type": "answer",
-    "client-id": 1, // Added by router
+    "client-id": "1", // Added by router
     "payload": ...(SDP description details)...
 }
 ```
 
 
-This establishes the Client <-> Server peer-to-peer WebRTC communication stream carrying display and audio media streams, and also input device events.
+This establishes the Client <-> Host peer-to-peer WebRTC communication stream carrying display and audio media streams, and also input device events.
 
 # Input Device Events Protocol
 
-The input device events are sent over the "input" data channel of the peer-to-peer WebRTC stream between the Client and Server. All input events are sent from the Client to the Server.
+The input device events are sent over the "input" data channel of the peer-to-peer WebRTC stream between the Client and Host. All input events are sent from the Client to the Host.
 
  Indicate that all buttons and keys should release. 
 ```json

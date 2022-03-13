@@ -1,5 +1,5 @@
 
-// Signalling server for connection negotiation.
+// Signalling service for connection negotiation.
 var router = null;
 
 // Peer to peer streams.
@@ -18,7 +18,7 @@ async function connect() {
   if (router) router.close();
   Object.values(streams).forEach((stream) => {stream.connection.close()});
 
-  // Get the router configs (including stun and turn servers).
+  // Get the router configs (including stun and turn services).
   const config = await fetch(`${window.location.protocol}//${
     window.location.host}/api/config`).then(r => r.json());
 
@@ -31,8 +31,8 @@ async function connect() {
   } catch (err) {alert(`Could not activate screen:\n${err}`)}
   document.querySelector('#display').srcObject = screenStream;
 
-  // Connect up the the routing server, authenticating in the query parameters.
-  router = new WebSocket(`wss://${window.location.host}/signal/server?auth=${
+  // Connect up the the routing service, authenticating in the query parameters.
+  router = new WebSocket(`wss://${window.location.host}/signal/host?auth=${
     document.getElementById("secret").value}`);
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
@@ -58,10 +58,10 @@ async function connect() {
     }
   }
   router.onopen = async () => {
-    // Alert all clients the server is ready in case any have been waiting.
+    // Alert all clients the host is ready in case any have been waiting.
     router.send(JSON.stringify({
       'client-id': 'broadcast',
-      'type': 'server-ready'
+      'type': 'host-ready'
     }));
   }
 }

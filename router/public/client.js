@@ -1,11 +1,11 @@
 
-// Signalling server for peer-to-peer connection negotiation.
+// Signalling router for peer-to-peer connection negotiation.
 var router;
 
 
 /**
  * Register with the router (websocket signalling system) and
- * then connect the peer-to-peer stream with the server including
+ * then connect the peer-to-peer stream with the host including
  * display, audio, and input channels.
  */
 async function connect() {
@@ -27,7 +27,7 @@ async function connect() {
   }
 
   // Prepare the peer-to-peer stream connection,
-  // using the router configs (including stun turn servers).
+  // using the router configs (including stun and turn services).
   const config = await fetch(`${window.location.protocol}//${
     window.location.host}/api/config`).then(r => r.json());
   const stream = new PeerStream((m)=>router.send(m), config.rtc);
@@ -53,15 +53,15 @@ async function connect() {
   // Ready router message handling for peer-to-peer stream connection.
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
-    // If the server comes online, attempt connection.
-    if (msg.type == 'server-ready')
+    // If the host comes online, attempt connection.
+    if (msg.type == 'host-ready')
       router.send(JSON.stringify({type: 'request'}));
     // Otherwise its a signalling message establishing the websocket stream.
     else stream.handleMessage(msg);
   }
   router.onopen = (event) => {
     document.getElementById("loginForm").style.display = "none";
-    // Request connection in case the server is already waiting.
+    // Request connection in case the host is already waiting.
     router.send(JSON.stringify({type: 'request'}));
   };
   // Add a message for when the router connection fails
@@ -72,7 +72,7 @@ document.querySelector('#start').onclick = connect;
 
 /**
  * Manages the RTC negotiation logic to establish
- * WebRTC connections with the server (via a router}.
+ * WebRTC connections with the host (via a router}.
  **/
 class PeerStream {
   constructor(send, config) {
@@ -85,7 +85,7 @@ class PeerStream {
     this.send = send;
   }
 
-  // Respond to server messages.
+  // Respond to host messages.
   async handleMessage(msg) {
     if (msg.type == 'offer') {
       await this.connection.setRemoteDescription(msg.payload);
@@ -105,7 +105,7 @@ class PeerStream {
 /**
  * Make the pointer and keyboard events triggered
  * from the provided canvas emit input events on the
- * provided data channel (to the server).
+ * provided data channel (to the host).
  *
  * @param {HTMLElement} canvas Where to listen for events.
  * @param {RTCDataChannel} dataChannel Where to send input event messages.

@@ -5,7 +5,7 @@ const WebSocket = require('ws');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { exit } = require('process');
-process.chdir(__dirname); // Server relative to this file.
+process.chdir(__dirname); // Paths relative to this file.
 
 /**
  * Configurable parameters.
@@ -61,7 +61,7 @@ console.log(`Please connect using Connection Key: ${
 var app = express();
 // Serve the client app.
 app.get('/', (req, res) => {
-  res.sendFile('public/client/client.html', { root: __dirname });
+  res.sendFile('public/client.html', { root: __dirname });
 });
 app.use(express.static('public'));
 // Give the client the config.
@@ -79,15 +79,15 @@ app.get('/api/config', (req, res) => {
 const wss = new WebSocket.Server({ noServer: true });
 var connectionCount = 0;
 var getConnectionNumber = () => { return connectionCount++; };
-var server = null;
+var host = null;
 var clients = {};
 wss.on('connection', (ws, request) => {
   var connectionNumber = getConnectionNumber();
 
-  // Establish connection for the server.
-  if (request.url.startsWith("/signal/server")) {
-    server = ws;
-    ws.on('close', (event) => { server = null; });
+  // Establish connection for the host.
+  if (request.url.startsWith("/signal/host")) {
+    host = ws;
+    ws.on('close', (event) => { host = null; });
     ws.on('message', (message) => {
       // Unwrap the message and send to the appropriate clients.
       try { var data = JSON.parse(message); }
@@ -112,20 +112,20 @@ wss.on('connection', (ws, request) => {
     clients[connectionNumber] = ws;
     ws.on('close', (event) => { delete clients[connectionNumber]; });
     ws.on('message', (message) => {
-      if (server) {
-        // Lace the message so the server knows which client
+      if (host) {
+        // Lace the message so the host knows which client
         // to respond back to.
         try { var data = JSON.parse(message); }
         catch (e) /*ignore invalid json*/ { return }
-        data['client-id'] = connectionNumber;
-        server.send(JSON.stringify(data));
+        data['client-id'] = `${connectionNumber}`;
+        host.send(JSON.stringify(data));
       }
     });
   }
 
 });
 // Connect it up for serving
-app.get(['/signal/client', '/signal/server'],
+app.get(['/signal/client', '/signal/host'],
   // Authenticate.
   (req, res, next) => {
     try {
