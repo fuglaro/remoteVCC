@@ -23,7 +23,7 @@ As this is in active development, some features are incomplete. Please see the s
 
 * **Network Traversal Options**:
   * **Via a Host Port**: The Host will listen for client connections on the local network on a specified port. This allows connectivity across a local netowrk or through port forwarding.
-  * **Via a Router on the Web**: Utilises a Router service running on the internet, accessible to both the Host and Client to allow the Client to connect to the Host over the internet, even if the Host behind a typical firewall. This allows connectivity over the internet without port forwarding. This behaves similar to screen sharing on typical video conferencing solutions but with the additional features of RemoteVCC. The Host will make a persistent, unique and unguessable host identifier, which is registered with the Router, for clients to connect via.
+  * **Via a Router on the Web**: Utilises a Router service running on the internet, accessible to both the Host and Client to allow the Client to connect to the Host over the internet, even if the Host behind a typical firewall. This allows connectivity over the internet without port forwarding. This behaves similar to screen sharing on typical video conferencing solutions but with the additional features of RemoteVCC. The Host will make a persistent, unique and unguessable host identifier key, which is registered with the Router, for clients to connect via.
 
 * **Simple Command-Line Tools**:
   * remoteVCChost:
@@ -130,6 +130,8 @@ TODO TBC
 ## Communication Security
 
 Communication of data streams between the client and host operate over WebRTC. WebRTC is a peer-to-peer protocol and requires an initial exchange of messages to establish the communication channel and negotiate the parameters. These initial negotiation messages, use a WSS connection, either from the client to the host, or via a router service. This WSS connection requires a digital certificate, which must be provided by either the host, or the router (if used). When a router is used, it is recommended that this digital certificate be registed with a certificate authority, but direct connections to Hosts can use your own self-signed certificate, which can be registered with the client.
+
+All keys have 192bit entropy and are randomly generated with commonly used crypto random generation functions.
 
 Communication is established as follows:
 1. The router, or host, is set up with a TLS digital certificate registered either with a certificate authority, or self signed and registed with the client.
