@@ -58,7 +58,7 @@ Custom Access Keys:
 
 ### Current Feature Statuses
 
-| | Through Router | Through Port |
+| | Through<br>Router | Through<br>Port |
 |---|---|---|
 |**Encrypted<br>Communication**        | ✔ | ✔ |
 |**End-to-End<br>Encrypted<br>Streams**| ✔ | ✔ |
@@ -66,7 +66,7 @@ Custom Access Keys:
 
 #### Host Features
 
-| | Test-Host<br>(Browser) | Linux | Window | MacOS | Raspberry Pi |
+| | Test | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
 |**Video**                | ✔ | ☐ | ☐ | ☐ | ☐ |
 |**Keyboard**             | ✔ | ☐ | ☐ | ☐ | ☐ |
@@ -84,7 +84,7 @@ Custom Access Keys:
 
 #### Host Security Features
 
-| | Test-Host<br>(Browser) | Linux | Window | MacOS | Raspberry Pi |
+| | Test | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
 |**View Only<br>Access**   | ☐ | ☐ | ☐ | ☐ | ☐ |
 |**Input<br>Restrictions** | ☐ | ☐ | ☐ | ☐ | ☐ |
@@ -95,7 +95,7 @@ Custom Access Keys:
 
 #### Client Features
 
-| | Web Client | Linux | Window | MacOs | Raspberry Pi 4<br>(Thin Client) |
+| | Web | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
 |**Video**              | ✔ | ☐ | ☐ | ☐ | ☐ |
 |**Keyboard**           | ✔ | ☐ | ☐ | ☐ | ☐ |
