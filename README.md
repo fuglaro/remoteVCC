@@ -15,7 +15,7 @@ As this is in active development, some features are incomplete. Please see the s
   * End-to-end encryption for all data streaming including display and input between Client and Host (DTLS-SRTP with WebRTC). Note that the Router (if used) needs to be trusted for the initiating key exchange.
   * Enforced Digital Certificate based authentication of the Host or Router.
 
-* **Host Login Sxpport**: Optionally allow new login sessions with the host's user login credentials, which must be provided by the client. If the host supports multiple active virtual sessions, these can be requested by the client. Connections to active sessions from different users are denied. Must be run as admin.
+* **Host Login Support**: Optionally allow new login sessions with the host's user login credentials, which must be provided by the client. If the host supports multiple active virtual sessions, these can be requested by the client. Connections to active sessions from different users are denied. Must be run as admin.
 
 * **Access Keys**:
   * A persistent access key is created and must be provided by the client connection to have access granted. This can be provided in the connection URL itself but this may not be secure if connecting from a browser on a public access computer.
@@ -24,6 +24,9 @@ As this is in active development, some features are incomplete. Please see the s
 * **Network Traversal Options**:
   * **Via a Host Port**: The Host will listen for client connections on the local network on a specified port. This allows connectivity across a local netowrk or through port forwarding.
   * **Via a Router on the Web**: Utilises a Router service running on the internet, accessible to both the Host and Client to allow the Client to connect to the Host over the internet, even if the Host behind a typical firewall. This allows connectivity over the internet without port forwarding. This behaves similar to screen sharing on typical video conferencing solutions but with the additional features of RemoteVCC. The Host will make a persistent, unique and unguessable host identifier key, which is registered with the Router, for clients to connect via.
+
+* **Connection Manager**
+A smarter connection manager is planned which will act as an alternative to the inbuilt Router. This will allow management of clients and host pools and more advanced authentication systems like OAuth2 and multifactor authentication. The interfaces of the Router is designed to support these capabilities. The connection manager will not be included in this project but rather in a separate project supporting the RemoteVCC Router interface.
 
 * **Simple Command-Line Tools**:
   * remoteVCChost:
@@ -178,10 +181,6 @@ This project aims to find an opportunity for repurposing existing technology to 
 
 ## Dependencies
 TODO review
-### Included
-https://github.com/zserge/jsmn
-### Linked
-TODO
 
 ## TODO
 1. include stun service with the router for local connections
