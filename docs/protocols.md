@@ -15,6 +15,7 @@ Communication protocol for establishing the peer-to-peer streem between the clie
 {
     "type": "request",
     "client-id": "1", // Added by router
+    "access-key": ...(access key)...
 }
 ```
 
@@ -52,8 +53,18 @@ Communication protocol for establishing the peer-to-peer streem between the clie
 }
 ```
 
-
 This establishes the Client <-> Host peer-to-peer WebRTC communication stream carrying display and audio media streams, and also input device events.
+
+## Access Denied
+
+If connection credetials are invalid, the router, or server, will respond
+to the client appropriately:
+
+```json
+{
+    "type": "denied"
+}
+```
 
 # Input Device Events Protocol
 

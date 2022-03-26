@@ -10,7 +10,6 @@
                 height: 100%;
                 margin: 0;
                 padding: 0;
-                font-family: Arial;
             }
             * {
                 box-sizing: border-box;
@@ -49,8 +48,9 @@
             }
             /* -- Display -- */
             #display {
-                object-fit: contain;
                 background: #AAAAAA;
+                border: 0px;
+                object-fit: scale-down;
                 width: 100%;
                 height: 100%;
             }
@@ -69,12 +69,13 @@
         </style>
     </head>
     <body>
-        <label id="statusMessage"></label>
+        <label id="statusMessage" onmouseup=setStatus()></label>
         <div class="form" id="loginForm">
-            <input id="secret" type="password" placeholder="Connection Key">
+            <input id="hostID" type="password" placeholder="Host ID"/>
+            <input id="accessKey" type="password" placeholder="Access Key"/>
             <button id="start">Login</button>
         </div>
-        <video id="display" autoplay></video>
+        <video id="display" oncontextmenu="javascript:return false;" autoplay/>
         <script src="client.js"/></script>
     </body>
 </html>

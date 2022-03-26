@@ -6,43 +6,49 @@
         <style>
             #display {
                 object-fit: contain;
-                background: #000000;
+                background: black;
                 width: 100%;
-                height: 80%;
-            }
-            #canvas {
-                position: absolute;
-                background-color:rgba(0,0,0,0);
-                z-index: 10;
             }
             #fakeDisplay {
                 position: absolute;
                 z-index: -1;
             }
+            #canvas {
+                position: absolute;
+                background-color: rgba(0,0,0,0);
+            }
+            #keys {
+                position: absolute;
+                color: white;
+                background-color: black;
+            }
         </style>
     </head>
-    <body onresize="resizeCanvas()">
+    <body onload="resizeCanvas()" onresize="resizeCanvas()">
+        <button id="start">Host</button>
+        <input id="hostID" placeholder="Host ID"/>
+        <input id="accessKey" placeholder="Access Key"/>
         <input type="checkbox" id="realData"/><label>Screenshare</label>
-        <input type="password" id="secret" placeholder="Connection Key"/>
-        <button id="start">Start</button>
-        <canvas id="fakeDisplay" width="30" height="20"></canvas>
-        <label id="keys"></label>
         <br/>
-        <video id="display" onplay="resizeCanvas()" autoplay></video>
+        <label id="connectURL"></label>
+        <br/>
+        <canvas id="fakeDisplay"></canvas>
+        <video id="display" onresize="resizeCanvas()" autoplay></video>
         <canvas id="canvas"></canvas>
+        <label id="keys"></label>
         <script src="testhost.js"></script>
         <script>
           // Snap canvases over video (for virtual pointer and fake display)
           const video = document.getElementById("display");
           const c = document.getElementById("canvas");
+          const k = document.getElementById("keys");
           const fc = document.getElementById("fakeDisplay");
           function resizeCanvas() {
-            fc.style.left = c.style.left = video.offsetLeft + 'px';
-            fc.style.top = c.style.top = video.offsetTop + 'px';
-            fc.width = c.width = video.offsetWidth;
+            k.style.left = c.style.left = video.offsetLeft + 'px';
+            k.style.top = c.style.top = video.offsetTop + 'px';
+            k.width = fc.width = c.width = video.offsetWidth;
             fc.height = c.height = video.offsetHeight;
           }
-          resizeCanvas()
           // Initiate the fake display animation
           const ctx = fc.getContext('2d');
           function drawVid() {

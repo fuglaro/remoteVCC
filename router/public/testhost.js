@@ -1,24 +1,22 @@
 
 // Signalling service for connection negotiation.
 var router = null;
-
-// Peer to peer streams.
+// Peer to peer streams - one for each client.
 var streams = {};
 // Media stream for the display.
-var screenStream;
+var display;
 
+const hostIDEl = document.getElementById('hostID')
 
-
-// TODO move the host key identifier and connection key generation here
-/*
-
+/**
+ * Genereate a cryptographically safe 192bit random key
+ * in base64.
+ **/
 function getRandom192bitKey() {
   var a = new Uint8Array(192/8);
   window.crypto.getRandomValues(a);
   return btoa(String.fromCharCode.apply(null, a)); // base64
 }
-
- */
 
 
 /**
@@ -31,28 +29,38 @@ async function connect() {
   if (router) router.close();
   Object.values(streams).forEach((stream) => {stream.connection.close()});
 
+  // Auto generate any omitted values and display connection url.
+  if (!document.getElementById('accessKey').value)
+    document.getElementById('accessKey').value = getRandom192bitKey();
+  if (!hostIDEl.value)
+    hostIDEl.value = getRandom192bitKey();
+  document.getElementById('connectURL').innerHTML = (`${window.location
+    .protocol}//${window.location.host}/?host=${
+    encodeURIComponent(hostIDEl.value)}&accesskey=${
+    encodeURIComponent(document.getElementById("accessKey").value)}`);
+
   // Get the router configs (including stun and turn services).
   const config = await fetch(`${window.location.protocol}//${
     window.location.host}/api/config`).then(r => r.json());
 
   // Ready display media.
-  const fake = document.querySelector('#fakeDisplay');
-  const useReal = document.querySelector('#realData').checked;
-  try {
-    screenStream = useReal ? await navigator.mediaDevices.getDisplayMedia(
-      {video: true, frameRate: 30}) : fake.captureStream(30);
-  } catch (err) {alert(`Could not activate screen:\n${err}`)}
-  document.querySelector('#display').srcObject = screenStream;
+  const fake = document.getElementById('fakeDisplay');
+  if (!document.getElementById('realData').checked)
+    display = fake.captureStream(15);
+  else
+    try {
+      display = await navigator.mediaDevices.getDisplayMedia({video: true});
+    } catch (err) {alert(`Could not activate screen:\n${err}`)}
+  document.getElementById('display').srcObject = display;
 
-  // Connect up the the routing service, authenticating in the query parameters.
-  router = new WebSocket(`wss://${window.location.host}/signal/host?auth=${
-    document.getElementById("secret").value}`);
+  // Connect up to the routing service..
+  router = new WebSocket(`wss://${window.location.host}/host?`+
+    `host=${encodeURIComponent(hostIDEl.value)}`);
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
 
     // Always reply directly to specific clients.
-    function routerSend(message) {
-      data = JSON.parse(message);
+    function routerSend(data) {
       data['client-id'] = msg['client-id'];
       router.send(JSON.stringify(data));
     }
@@ -60,9 +68,15 @@ async function connect() {
     // Handle peer-to-peer stream creation for this client,
     // and connect display sender and input reciever.
     if (msg.type == 'request') {
+      // Validate the access-key
+      if (msg['access-key'] != document.getElementById('accessKey').value) {
+        routerSend({type: 'denied'});
+        return;
+      }
+      // Establish the connection
       streams[msg['client-id']] = new PeerStream(routerSend, config.rtc);
-      screenStream.getTracks().forEach((track) =>
-        streams[msg['client-id']].connection.addTrack(track, screenStream));
+      display.getTracks().forEach((track) =>
+        streams[msg['client-id']].connection.addTrack(track, display));
       streams[msg['client-id']].connection.createDataChannel("input")
         .onmessage = getInputHandler();
     } else if (msg['client-id'] in streams) {
@@ -78,7 +92,7 @@ async function connect() {
     }));
   }
 }
-document.querySelector('#start').onclick = connect;
+document.getElementById('start').onclick = connect;
 
 
 /**
@@ -91,20 +105,20 @@ class PeerStream {
     // Ready the send of ICE Candidate details.
     this.connection.onicecandidate = ({candidate}) => {
       if (!candidate) return;
-      routerSend(JSON.stringify({
+      routerSend({
         type: 'ice-candidate',
         payload: candidate
-      }));
+      });
     }
     // Ready the send of the Local Description details.
     this.connection.onnegotiationneeded = async () => {
       try {
         await this.connection.setLocalDescription(
           await this.connection.createOffer());
-        routerSend(JSON.stringify({
+        routerSend({
           type: 'offer',
           payload: this.connection.localDescription
-        }));
+        });
       } catch (err) { console.error(err) }
     }
   }
@@ -128,9 +142,9 @@ class PeerStream {
  * and pressed keys for testing and debugging.
  */
 function getInputHandler() {
-  const c = document.querySelector('#canvas');
+  const c = document.getElementById('canvas');
   const ctx = c.getContext("2d");
-  const keyLabel = document.querySelector('#keys');
+  const keyLabel = document.getElementById('keys');
 
   // Virtual Keyboard Parameters
   let keysDown = new Set();
@@ -222,7 +236,7 @@ function getInputHandler() {
       xPos*c.clientWidth, yPos*c.clientHeight, 5, 7/4*Math.PI, 9/4*Math.PI);
     ctx.stroke();
     // Wheel position.
-    ctx.strokeStyle = 'blue';
+    ctx.strokeStyle = 'lightblue';
     ctx.beginPath();
     ctx.arc(xWheel*c.clientWidth, yWheel*c.clientHeight, 5, 0, 7);
     ctx.stroke();

@@ -2,6 +2,17 @@
 // Signalling router for peer-to-peer connection negotiation.
 var router;
 
+// Autofill connection parameters supplied in URL.
+var urlParams = new URLSearchParams(window.location.search);
+if (urlParams.has('host')) {
+  document.getElementById("hostID").value = urlParams.get('host');
+  document.getElementById("hostID").style.display = 'none';
+}
+if (urlParams.has('accesskey')) {
+  document.getElementById("accessKey").value = urlParams.get('accesskey');
+  document.getElementById("accessKey").style.display = 'none';
+}
+if (urlParams.has('host') && urlParams.has('accesskey')) connect();
 
 /**
  * Register with the router (websocket signalling system) and
@@ -9,22 +20,11 @@ var router;
  * display, audio, and input channels.
  */
 async function connect() {
-  setStatus("Connecting...");
-
   // Close any existing router connections
   if (router) router.close();
 
-  // Prepare a callback counting waiting connections,
-  // so we can let the user know its all ready to go
-  // and clean things up when finished connecting.
-  var connectionsWaiting = 2;
-  function connectionDone() {
-    connectionsWaiting--;
-    if (connectionsWaiting) return;
-    setStatus();
-    router.close();
-    document.querySelector('#display').focus()
-  }
+  setStatus("Connecting...<br>(Menu: Ctrl x3)");
+  document.getElementById("loginForm").style.display = 'block';
 
   // Prepare the peer-to-peer stream connection,
   // using the router configs (including stun and turn services).
@@ -33,41 +33,39 @@ async function connect() {
   const stream = new PeerStream((m)=>router.send(m), config.rtc);
   // When remote track media arrives, display it on screen.
   stream.connection.ontrack = (event) => {
-    document.querySelector('#display').srcObject = event.streams[0];
-    connectionDone();
-  };
-  // Hook up attaching the input event handlers to the data stream.
+    document.getElementById('display').srcObject = event.streams[0]};
+  // Get ready to attach the input event handlers to the data stream.
   stream.connection.ondatachannel = (inputChannel) => {
-    inputChannel.channel.onopen = (e) => {
-      attachInput(document.querySelector('#display'), inputChannel.channel);
-      connectionDone()
-    }
-    // Try to reconnect through the router if we lose the
-    // peer-to-peer stream connection.
     inputChannel.channel.onclose = (e) => {connect()};
+    inputChannel.channel.onopen = (e) => {
+      attachInput(document.getElementById('display'), inputChannel.channel);
+      // Clean up connection negotiation phase.
+      setStatus('Connecting...<br>(Menu: Ctrl x3)', 1);
+      router.close();
+      document.getElementById("loginForm").style.display = 'none';
+    }
   }
 
   // Connect to the router, authenticating in the query parameters.
-  router = new WebSocket(`wss://${window.location.host}/signal/client?auth=${
-    document.getElementById("secret").value}`);
+  router = new WebSocket(`wss://${window.location.host}/client?`+
+    `host=${document.getElementById("hostID").value}`);
   // Ready router message handling for peer-to-peer stream connection.
   router.onmessage = async (event) => {
     const msg = JSON.parse(event.data);
-    // If the host comes online, attempt connection.
-    if (msg.type == 'host-ready')
-      router.send(JSON.stringify({type: 'request'}));
+    // If the host comes online, reattempt connection.
+    if (msg.type == 'host-ready') connect();
+    else if (msg.type == 'denied') setStatus('Access Denied', 2);
     // Otherwise its a signalling message establishing the websocket stream.
     else stream.handleMessage(msg);
   }
-  router.onopen = (event) => {
-    document.getElementById("loginForm").style.display = "none";
-    // Request connection in case the host is already waiting.
-    router.send(JSON.stringify({type: 'request'}));
-  };
+  // Request connection in case the host is already waiting.
+  router.onopen = (event) => {router.send(JSON.stringify({
+    type: 'request',
+    'access-key': document.getElementById("accessKey").value}))};
   // Add a message for when the router connection fails
-  router.onerror = (event) => {setStatus("Connection Failed.", 2)};
+  router.onerror = (event) => {setStatus('Connection Failed.', 2)}
 }
-document.querySelector('#start').onclick = connect;
+document.getElementById('start').onclick = connect;
 
 
 /**
@@ -119,6 +117,8 @@ function attachInput(canvas, dataChannel) {
   canvas.addEventListener('focusin', releaseAllButtons);
   canvas.addEventListener('focusout', releaseAllButtons);
 
+  // Counter for menu activation
+  var menuHits = 0;
 
   // Key down (pressed) event.
   canvas.addEventListener('keydown', e => {
@@ -126,6 +126,27 @@ function attachInput(canvas, dataChannel) {
       type: 'key-down',
       code: e.code
     }));
+
+    // Handle menu events.
+    if (e.code == 'ControlLeft') menuHits++;
+    else {
+      if (menuHits >= 3) {
+        setStatus();
+        // Capturing input.
+        if (e.code == 'Enter')
+          if (document.pointerLockElement) document.exitPointerLock();
+          else canvas.requestPointerLock();
+        // Display stretching.
+        if (e.code == 'Space')
+          canvas.style['object-fit'] = canvas.style['object-fit'] == 'contain' ?
+            'scale-down' : 'contain';
+      }
+      menuHits = 0;
+    }
+    if (menuHits >= 3)
+      setStatus(
+        '[Enter] - Capture input.<br>'+
+        '[Space] - Stretch to fit.');
   });
 
 
@@ -191,8 +212,6 @@ function attachInput(canvas, dataChannel) {
 
   // Mouse down (a button was pressed).
   canvas.addEventListener('mousedown', e => {
-    // Capture the mouse if it hasn't been already.
-    if (!document.pointerLockElement) canvas.requestPointerLock();
     // Send the mouse-move information.
     dataChannel.send(JSON.stringify({
       type: 'button-down',
@@ -265,4 +284,5 @@ async function setStatus(message="", timeout=null) {
   statusMessage.style.display = message ? "block" : "none";
   statusMessage.innerHTML = message;
   if (timeout) setTimeout(setStatus, timeout*1000);
+  document.getElementById('display').focus()
 }

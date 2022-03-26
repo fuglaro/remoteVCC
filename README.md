@@ -34,7 +34,7 @@ A smarter connection manager is planned which will act as an alternative to the 
 Serve a host for clients to connect to.
 
 Example for connecting on a local network:
-    remoteVCChost --through-port=43755 --tls-certificate=.local/share/remoteVCC/cert.pem
+    remoteVCChost --through-port=43755 --tls-pfx=rVCC.pfx
 
 Example for connecting over the internet:
     remoteVCChost --through-router=https://remotevcc.convex.cc:43755
@@ -51,11 +51,9 @@ Example for connecting over the internet:
     through this port. This changes the local network client connection URL
     that is printed.
 
---tls-certificate=[certificate file]: (required with --through-port) Use a
-    specific certificate file to establish encrypted communication. This
-    certificate should be registered with a certificate authority or with
-    the client itself.
-
+--tls-pfx=[tls cert/key file]: (required with --through-port) Uses this
+    certificate when establishing encrypted communication. The certificate
+    should be registered with a certificate authority or with the client.
 ```
   * remoteVCCrouter:
 ```
@@ -63,14 +61,14 @@ Negotiate connectivity between clients and hosts establishing the streams
 even when the Client can't directly access the Host. 
 
 Example:
-    remoteVCCrouter --tls-certificate=.local/share/remoteVCC/cert.pem
+    remoteVCCrouter --tls-pfx=rVCC.pfx
 
---through-port=[port number] (default:43755): Listens for client connections
-    through this port.
+--via-port=[port number] (default:43755): Listens for client and host
+    connections through this port.
 
---tls-certificate=[certificate file]: (required) Use a specific certificate
-    file to establish encrypted communication. This certificate should be
-    registered with a certificate authority or with the client itself.
+--tls-pfx=[tls cert/key file]: (required with --through-port) Uses this
+    certificate when establishing encrypted communication. The certificate
+    should be registered with a certificate authority or with the client.
 ```
   * remoteVCCkeys:
 ```
