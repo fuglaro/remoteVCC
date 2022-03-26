@@ -66,7 +66,7 @@ Example:
 --via-port=[port number] (default:43755): Listens for client and host
     connections through this port.
 
---tls-pfx=[tls cert/key file]: (required with --through-port) Uses this
+--tls-pfx=[tls cert/key file]: (required) Uses this
     certificate when establishing encrypted communication. The certificate
     should be registered with a certificate authority or with the client.
 ```
@@ -180,7 +180,13 @@ This project aims to find an opportunity for repurposing existing technology to 
 
 
 ## Dependencies
-TODO review
+### remoteVCCrouter
+* NodeJS
+* npm
+  * express
+  * ws
+### remoteVCChost
+TODO TBC
 
 ## TODO
 1. include stun service with the router for local connections

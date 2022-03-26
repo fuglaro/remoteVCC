@@ -2,7 +2,7 @@
   "name": "nodejs_remoteVCC_router",
   "version": "1.0.0",
   "description": "Connects clients with remoteVCC hosts.",
-  "main": "router.js",
+  "main": "app.js",
   "dependencies": {
     "express": "^4.17.1",
     "ws": "^7.3.1"
