@@ -87,11 +87,11 @@ TODO TBC
 
 #### Host Features
 
-| | Test | Lin | Win | OSX | Pi |
+| | Web | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
 |**Video**                | ✔ |   |   |   |   |
-|**Keyboard**             | ✔ |   |   |   |   |
-|**Mouse**                | ✔ |   |   |   |   |
+|**Keyboard**             | v |   |   |   |   |
+|**Mouse**                | v |   |   |   |   |
 |**Gamepads**             |   |   |   |   |   |
 |**Clipboard**            |   |   |   |   |   |
 |**Microphone<br>Input**  |   |   |   |   |   |
@@ -102,11 +102,13 @@ TODO TBC
 |**Shared<br>Access**     | ✔ |   |   |   |   |
 |**Through<br>Port**      | ✘ |   |   |   |   |
 |**Through<br>Router**    | ✔ |   |   |   |   |
+v - virtual only
 
 #### Host Security Features
 
-| | Test | Lin | Win | OSX | Pi |
+| | Web | Lin | Win | OSX | Pi |
 |---|---|---|---|---|---|
+|**Protected<br>Access**   | ✔ |   |   |   |   |
 |**View Only<br>Access**   |   |   |   |   |   |
 |**Input<br>Restrictions** |   |   |   |   |   |
 |**One-Time<br>Access**    |   |   |   |   |   |
@@ -184,6 +186,5 @@ TODO review
 1. include stun service with the router for local connections
 1. Think about third party stun services and GDPR
 1. Sharing of one window only, but also restricting input events to that window only. Probably want a separate command to remoteVCChost
-1. Think about a configurable payload for the Host and Client to send to the Router for alternate Router implementations that have different authentication mechaisms.
-
+1. Consider a shared-key encryption of the router messaging and signalling. For full end-to-end encryption through an untrusted router.
 

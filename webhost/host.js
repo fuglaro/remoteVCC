@@ -68,8 +68,8 @@ async function connect() {
     // Handle peer-to-peer stream creation for this client,
     // and connect display sender and input reciever.
     if (msg.type == 'request') {
-      // Validate the access-key
-      if (msg['access-key'] != document.getElementById('accessKey').value) {
+      // Validate the access key
+      if (msg['payload'] != document.getElementById('accessKey').value) {
         routerSend({type: 'denied'});
         return;
       }

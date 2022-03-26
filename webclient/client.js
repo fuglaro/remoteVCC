@@ -61,7 +61,7 @@ async function connect() {
   // Request connection in case the host is already waiting.
   router.onopen = (event) => {router.send(JSON.stringify({
     type: 'request',
-    'access-key': document.getElementById("accessKey").value}))};
+    'payload': document.getElementById("accessKey").value}))};
   // Add a message for when the router connection fails
   router.onerror = (event) => {setStatus('Connection Failed.', 2)}
 }
@@ -145,8 +145,8 @@ function attachInput(canvas, dataChannel) {
     }
     if (menuHits >= 3)
       setStatus(
-        '[Enter] - Capture input.<br>'+
-        '[Space] - Stretch to fit.');
+        '[Enter] - Capture input<br>'+
+        '[Space] - Stretch to fit');
   });
 
 

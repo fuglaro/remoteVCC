@@ -1,5 +1,6 @@
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const WebSocket = require('ws');
 
@@ -13,10 +14,11 @@ const TLS_PFX_FILE = process.env.TLS_PFX;
  * Webpage service
  */
 var app = express();
-// Serve the client app.
-app.get('/', (req, res) => {
-  res.sendFile('public/client.html', { root: __dirname })});
-app.use(express.static('public'));
+// Serve the client app and web host.
+app.get('/', (req, res) => {res.sendFile(
+  path.join(__dirname, '..', 'webclient', 'client.html'))});
+app.use(express.static(path.join('..', 'webclient')));
+app.use(express.static(path.join('..', 'webhost')));
 
 
 
@@ -48,12 +50,9 @@ wss.on('connection', (ws, req) => {
       try { var data = JSON.parse(message); }
       catch (e) /*ignore invalid json*/ { return }
       if (!clients[host]) return;
-      if (data['client-id'] == 'broadcast') {
-        /* We don't need to tell the client who they are. */
-        delete data['client-id'];
+      if (data['client-id'] == 'broadcast')
         Object.values(clients[host]).forEach(
           (client) => {client.send(JSON.stringify(data))});
-      }
       else if (data['client-id'] in clients[host])
         clients[host][data['client-id']].send(JSON.stringify(data));
     });

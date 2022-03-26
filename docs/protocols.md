@@ -6,24 +6,24 @@ Communication protocol for establishing the peer-to-peer streem between the clie
 1. Host -> Router -> Client (optionally if the client is already waiting):
 ```json
 {
-    "type": "host-ready",
     "client-id": "broadcast"
+    "type": "host-ready",
 }
 ```
 2. Client -> Router -> Host (client requests the stream):
 ```json
 {
-    "type": "request",
     "client-id": "1", // Added by router
-    "access-key": ...(access key)...
+    "type": "request",
+    "payload": ...(access key)...
 }
 ```
 
 3. Host -> Router -> Client (host offers WebRTC ICE Candidate connection information):
 ```json
 {
-    "type": "ice-candidate",
     "client-id": "1",
+    "type": "ice-candidate",
     "payload": ...(ICE candidate details)...
 }
 ```
@@ -31,24 +31,24 @@ Communication protocol for establishing the peer-to-peer streem between the clie
 4. Client -> Router -> Host (client relies with WebRTC ICE Candidate connection information):
 ```json
 {
-    "type": "ice-candidate",
     "client-id": "1", // Added by router
+    "type": "ice-candidate",
     "payload": ...(ICE candidate details)...
 }
 ```
 5. Host -> Router -> Client (host offers am SDP description for the stream):
 ```json
 {
-    "type": "offer",
     "client-id": "1",
+    "type": "offer",
     "payload": ...(SDP description details)...
 }
 ```
 6. Client -> Router -> Host (client responds with its own SDP description):
 ```json
 {
-    "type": "answer",
     "client-id": "1", // Added by router
+    "type": "answer",
     "payload": ...(SDP description details)...
 }
 ```
