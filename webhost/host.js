@@ -39,9 +39,9 @@ async function connect() {
     encodeURIComponent(hostIDEl.value)}&accesskey=${
     encodeURIComponent(document.getElementById("accessKey").value)}`);
 
-  // Get the router configs (including stun and turn services).
-  const config = await fetch(`${window.location.protocol}//${
-    window.location.host}/api/config`).then(r => r.json());
+  // Get the router configs for ICE services.
+  const ice = await fetch(`${window.location.protocol}//${
+    window.location.host}/iceservers`).then(r => {console.log(r);r.json()});
 
   // Ready display media.
   const fake = document.getElementById('fakeDisplay');
@@ -74,7 +74,7 @@ async function connect() {
         return;
       }
       // Establish the connection
-      streams[msg['client-id']] = new PeerStream(routerSend, config.rtc);
+      streams[msg['client-id']] = new PeerStream(routerSend, ice);
       display.getTracks().forEach((track) =>
         streams[msg['client-id']].connection.addTrack(track, display));
       streams[msg['client-id']].connection.createDataChannel("input")

@@ -69,6 +69,9 @@ Example:
 --tls-pfx=[tls cert/key file]: (required) Uses this
     certificate when establishing encrypted communication. The certificate
     should be registered with a certificate authority or with the client.
+
+--stun-server=[stun server]: Specify a STUN server to use.
+    This is required when the client or host needs to traverse a firewall.
 ```
   * remoteVCCkeys:
 ```
@@ -190,7 +193,6 @@ TODO TBC
 
 ## TODO
 1. include stun service with the router for local connections
-1. Think about third party stun services and GDPR
 1. Sharing of one window only, but also restricting input events to that window only. Probably want a separate command to remoteVCChost
 1. Consider a shared-key encryption of the router messaging and signalling. For full end-to-end encryption through an untrusted router.
 

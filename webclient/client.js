@@ -62,10 +62,10 @@ async function connect() {
   document.getElementById("loginForm").style.display = 'block';
 
   // Prepare the peer-to-peer stream connection,
-  // using the router configs (including stun and turn services).
-  const config = await fetch(`${window.location.protocol}//${
-    window.location.host}/api/config`).then(r => r.json());
-  const stream = new PeerStream((m)=>router.send(m), config.rtc);
+  // using the router configs for ICE services.
+  const ice = await fetch(`${window.location.protocol}//${
+    window.location.host}/iceservers`).then(r => r.json());
+  const stream = new PeerStream((m)=>router.send(m), ice);
   // When remote track media arrives, display it on screen.
   stream.connection.ontrack = (event) => {
     document.getElementById('display').srcObject = event.streams[0]};

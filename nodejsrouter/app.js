@@ -10,16 +10,18 @@ const abort = (msg) => {console.log(msg); process.exit(-1)};
 // Configurable parameters.
 var PORT = process.env.VIA_PORT || '43775';
 var TLS_PFX_FILE = process.env.TLS_PFX;
+var STUN_SERVER = process.env.STUN_SERVER || '_';
 // Update from command line arguments.
 process.argv.slice(2).forEach((arg) => {
   if (arg.startsWith('--tls-pfx=')) TLS_PFX_FILE = arg.slice(10);
   else if (arg.startsWith('--via-port=')) PORT = arg.slice(11);
+  else if (arg.startsWith('--stun-server=')) STUN_SERVER = arg.slice(14);
   else abort(
 `Negotiate connectivity between clients and hosts establishing the streams
 even when the Client can't directly access the Host.
 
 Example:
-    remoteVCCrouter --tls-pfx=rVCC.pfx
+    remoteVCCrouter --tls-pfx=rVCC.pfx --stun-server=stun.example.org
 
 --via-port=[port number] (default:43755): Listens for client and host
     connections through this port.
@@ -27,6 +29,9 @@ Example:
 --tls-pfx=[tls cert/key file]: (required) Uses this
     certificate when establishing encrypted communication. The certificate
     should be registered with a certificate authority or with the client.
+
+--stun-server=[stun server]: Specify a STUN server to use.
+    This is required when the client or host needs to traverse a firewall.
 
 Equivalent environment variables can alternatively be specified:
   VIA_PORT
@@ -57,18 +62,9 @@ app.get('/', (req, res) => {res.sendFile(
   path.join(__dirname, '..', 'webclient', 'client.html'))});
 app.use(express.static(path.join('..', 'webclient')));
 app.use(express.static(path.join('..', 'webhost')));
-
-
-
-// TODO fix this for privacy, and etter configurations
-const ICE_SERVERS = 'stun:stun.example.org';
-// TODO move to host response to first payload response or something
-// Give the client the config.
-app.get('/api/config', (req, res) => {
-  res.send(JSON.stringify({
-    rtc: { iceServers: [{urls: ICE_SERVERS}] }
-  }));
-});
+// Serve the router configs.
+app.get('/iceservers', (req, res) =>
+  res.send(JSON.stringify({ iceServers: [{urls: `stun:${STUN_SERVER}`}] })));
 
 
 /**
