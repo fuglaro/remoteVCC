@@ -192,7 +192,7 @@ This project aims to find an opportunity for repurposing existing technology to 
 TODO TBC
 
 ## TODO
-1. include stun service with the router for local connections
+1. Create remoteVCChost
 1. Sharing of one window only, but also restricting input events to that window only. Probably want a separate command to remoteVCChost
 1. Consider a shared-key encryption of the router messaging and signalling. For full end-to-end encryption through an untrusted router.
 
