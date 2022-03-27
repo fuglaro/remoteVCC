@@ -12,60 +12,6 @@ if (urlParams.has('accesskey')) {
   document.getElementById("accessKey").value = urlParams.get('accesskey');
   document.getElementById("accessKey").style.display = 'none';
 }
-if (urlParams.has('host') && urlParams.has('accesskey')) connect();
-
-/**
- * Register with the router (websocket signalling system) and
- * then connect the peer-to-peer stream with the host including
- * display, audio, and input channels.
- */
-async function connect() {
-  // Close any existing router connections
-  if (router) router.close();
-
-  setStatus("Connecting...<br>(Menu: Ctrl x3)");
-  document.getElementById("loginForm").style.display = 'block';
-
-  // Prepare the peer-to-peer stream connection,
-  // using the router configs (including stun and turn services).
-  const config = await fetch(`${window.location.protocol}//${
-    window.location.host}/api/config`).then(r => r.json());
-  const stream = new PeerStream((m)=>router.send(m), config.rtc);
-  // When remote track media arrives, display it on screen.
-  stream.connection.ontrack = (event) => {
-    document.getElementById('display').srcObject = event.streams[0]};
-  // Get ready to attach the input event handlers to the data stream.
-  stream.connection.ondatachannel = (inputChannel) => {
-    inputChannel.channel.onclose = (e) => {connect()};
-    inputChannel.channel.onopen = (e) => {
-      attachInput(document.getElementById('display'), inputChannel.channel);
-      // Clean up connection negotiation phase.
-      setStatus('Connecting...<br>(Menu: Ctrl x3)', 1);
-      router.close();
-      document.getElementById("loginForm").style.display = 'none';
-    }
-  }
-
-  // Connect to the router, authenticating in the query parameters.
-  router = new WebSocket(`wss://${window.location.host}/client?`+
-    `host=${document.getElementById("hostID").value}`);
-  // Ready router message handling for peer-to-peer stream connection.
-  router.onmessage = async (event) => {
-    const msg = JSON.parse(event.data);
-    // If the host comes online, reattempt connection.
-    if (msg.type == 'host-ready') connect();
-    else if (msg.type == 'denied') setStatus('Access Denied', 2);
-    // Otherwise its a signalling message establishing the websocket stream.
-    else stream.handleMessage(msg);
-  }
-  // Request connection in case the host is already waiting.
-  router.onopen = (event) => {router.send(JSON.stringify({
-    type: 'request',
-    'payload': document.getElementById("accessKey").value}))};
-  // Add a message for when the router connection fails
-  router.onerror = (event) => {setStatus('Connection Failed.', 2)}
-}
-document.getElementById('start').onclick = connect;
 
 
 /**
@@ -98,6 +44,67 @@ class PeerStream {
       this.connection.addIceCandidate(msg.payload);
   }
 }
+
+
+/**
+ * Register with the router (websocket signalling system) and
+ * then connect the peer-to-peer stream with the host including
+ * display, audio, and input channels.
+ */
+async function connect() {
+  // Close any existing router connections
+  if (router) {
+    router.onclose = () => {};
+    router.close();
+  }
+
+  setStatus("Connecting...<br>(Menu: Ctrl x3)");
+  document.getElementById("loginForm").style.display = 'block';
+
+  // Prepare the peer-to-peer stream connection,
+  // using the router configs (including stun and turn services).
+  const config = await fetch(`${window.location.protocol}//${
+    window.location.host}/api/config`).then(r => r.json());
+  const stream = new PeerStream((m)=>router.send(m), config.rtc);
+  // When remote track media arrives, display it on screen.
+  stream.connection.ontrack = (event) => {
+    document.getElementById('display').srcObject = event.streams[0]};
+  // Get ready to attach the input event handlers to the data stream.
+  stream.connection.ondatachannel = (inputChannel) => {
+    inputChannel.channel.onclose = (e) => {connect()};
+    inputChannel.channel.onopen = (e) => {
+      attachInput(document.getElementById('display'), inputChannel.channel);
+      // Clean up connection negotiation phase.
+      setStatus('Connecting...<br>(Menu: Ctrl x3)', 1);
+      router.onclose = () => {};
+      router.close();
+      document.getElementById("loginForm").style.display = 'none';
+    }
+  }
+
+  // Connect to the router, authenticating in the query parameters.
+  router = new WebSocket(`wss://${window.location.host}/client?`+
+    `host=${document.getElementById("hostID").value}`);
+  // Ready router message handling for peer-to-peer stream connection.
+  router.onmessage = async (event) => {
+    const msg = JSON.parse(event.data);
+    // If the host comes online, reattempt connection.
+    if (msg.type == 'host-ready') connect();
+    else if (msg.type == 'denied') setStatus('Access Denied', 2);
+    // Otherwise its a signalling message establishing the websocket stream.
+    else stream.handleMessage(msg);
+  }
+  // Request connection in case the host is already waiting.
+  router.onopen = () => {router.send(JSON.stringify({
+    type: 'request',
+    'payload': document.getElementById("accessKey").value}))};
+  // Add a message for when the router connection fails.
+  router.onerror = () => {setStatus('Connection Failed.', 2)}
+  // Retry connecting if connection drops during negotiation.
+  router.onclose = () => {connect()};
+}
+document.getElementById('start').onclick = connect;
+if (urlParams.has('host') && urlParams.has('accesskey')) connect();
 
 
 /**

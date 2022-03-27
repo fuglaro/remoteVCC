@@ -8,7 +8,7 @@ const WebSocket = require('ws');
 const abort = (msg) => {console.log(msg); process.exit(-1)};
 
 // Configurable parameters.
-var PORT = process.env.VIA_PORT || "43775";
+var PORT = process.env.VIA_PORT || '43775';
 var TLS_PFX_FILE = process.env.TLS_PFX;
 // Update from command line arguments.
 process.argv.slice(2).forEach((arg) => {
