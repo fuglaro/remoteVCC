@@ -27,7 +27,7 @@ async function connect() {
   // Ensure we have cleaned up any existing connections
   // since we may be reconnecting.
   if (router) router.close();
-  Object.values(streams).forEach((stream) => {stream.connection.close()});
+  Object.values(streams).forEach((stream) => stream.connection.close());
 
   // Auto generate any omitted values and display connection url.
   if (!document.getElementById('accessKey').value)
@@ -41,7 +41,7 @@ async function connect() {
 
   // Get the router configs for ICE services.
   const ice = await fetch(`${window.location.protocol}//${
-    window.location.host}/iceservers`).then(r => {console.log(r);r.json()});
+    window.location.host}/iceservers`).then((r) => r.json());
 
   // Ready display media.
   const fake = document.getElementById('fakeDisplay');

@@ -64,15 +64,15 @@ async function connect() {
   // Prepare the peer-to-peer stream connection,
   // using the router configs for ICE services.
   const ice = await fetch(`${window.location.protocol}//${
-    window.location.host}/iceservers`).then(r => r.json());
+    window.location.host}/iceservers`).then((r) => r.json());
   const stream = new PeerStream((m)=>router.send(m), ice);
   // When remote track media arrives, display it on screen.
-  stream.connection.ontrack = (event) => {
-    document.getElementById('display').srcObject = event.streams[0]};
+  stream.connection.ontrack = (event) =>
+    document.getElementById('display').srcObject = event.streams[0];
   // Get ready to attach the input event handlers to the data stream.
   stream.connection.ondatachannel = (inputChannel) => {
-    inputChannel.channel.onclose = (e) => {connect()};
-    inputChannel.channel.onopen = (e) => {
+    inputChannel.channel.onclose = () => connect();
+    inputChannel.channel.onopen = () => {
       attachInput(document.getElementById('display'), inputChannel.channel);
       // Clean up connection negotiation phase.
       setStatus('Connecting...<br>(Menu: Ctrl x3)', 1);
@@ -95,13 +95,13 @@ async function connect() {
     else stream.handleMessage(msg);
   }
   // Request connection in case the host is already waiting.
-  router.onopen = () => {router.send(JSON.stringify({
+  router.onopen = () => router.send(JSON.stringify({
     type: 'request',
-    'payload': document.getElementById("accessKey").value}))};
+    'payload': document.getElementById("accessKey").value}));
   // Add a message for when the router connection fails.
-  router.onerror = () => {setStatus('Connection Failed.', 2)}
+  router.onerror = () => setStatus('Connection Failed.', 2);
   // Retry connecting if connection drops during negotiation.
-  router.onclose = () => {connect()};
+  router.onclose = () => connect();
 }
 document.getElementById('start').onclick = connect;
 if (urlParams.has('host') && urlParams.has('accesskey')) connect();
@@ -118,8 +118,8 @@ if (urlParams.has('host') && urlParams.has('accesskey')) connect();
 function attachInput(canvas, dataChannel) {
 
   // Reset all buttons and keys to "up" on focus and unfocus.
-  const releaseAllButtons = (event) => {
-    dataChannel.send(JSON.stringify({type: 'all-up'}))};
+  const releaseAllButtons = () =>
+    dataChannel.send(JSON.stringify({type: 'all-up'}));
   document.addEventListener('pointerlockchange', releaseAllButtons);
   canvas.addEventListener('focusin', releaseAllButtons);
   canvas.addEventListener('focusout', releaseAllButtons);
@@ -128,7 +128,7 @@ function attachInput(canvas, dataChannel) {
   var menuHits = 0;
 
   // Key down (pressed) event.
-  canvas.addEventListener('keydown', e => {
+  canvas.addEventListener('keydown', (e) => {
     dataChannel.send(JSON.stringify({
       type: 'key-down',
       code: e.code
@@ -158,16 +158,15 @@ function attachInput(canvas, dataChannel) {
 
 
   // Key up (released) event.
-  canvas.addEventListener('keyup', e => {
+  canvas.addEventListener('keyup', (e) =>
     dataChannel.send(JSON.stringify({
       type: 'key-up',
       code: e.code
-    }));
-  });
+    })));
 
 
   // Mouse movement (motion and warp).
-  canvas.addEventListener('mousemove', e => {
+  canvas.addEventListener('mousemove', (e) => {
     // Get the position of the mouse position relative
     // the to remote display.
     // This does a bunch of calculations to estimate
@@ -218,27 +217,25 @@ function attachInput(canvas, dataChannel) {
 
 
   // Mouse down (a button was pressed).
-  canvas.addEventListener('mousedown', e => {
+  canvas.addEventListener('mousedown', (e) =>
     // Send the mouse-move information.
     dataChannel.send(JSON.stringify({
       type: 'button-down',
       button: e.button
-    }));
-  });
+    })));
 
 
   // Mouse up (a button was released).
-  canvas.addEventListener('mouseup', e => {
+  canvas.addEventListener('mouseup', (e) =>
     // Send the mouse-move information.
     dataChannel.send(JSON.stringify({
       type: 'button-up',
       button: e.button
-    }));
-  });
+    })));
 
 
   // Mouse wheel (a scroll wheel movement occurred).
-  canvas.addEventListener('wheel', e => {
+  canvas.addEventListener('wheel', (e) => {
     // Ignore page wheels.
     if (e.deltaMode == 2) return;
 
@@ -259,7 +256,7 @@ function attachInput(canvas, dataChannel) {
         // Video is width constrained.
         realHeight = cw / videoAspect;
       } else {
-        // Video is height constrained.
+        // Video is height constraine.
         realWidth = ch * videoAspect;
       }
       // Now adjust the pixel proportions.

@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const WebSocket = require('ws');
-const abort = (msg) => {console.log(msg); process.exit(-1)};
+const abort = (msg) => { console.log(msg); process.exit(-1) };
 
 // Configurable parameters.
 var PORT = process.env.VIA_PORT || '43775';
@@ -36,6 +36,7 @@ Example:
 Equivalent environment variables can alternatively be specified:
   VIA_PORT
   TLS_PFX
+  STUN_SERVER
 `);
 });
 
@@ -80,7 +81,7 @@ wss.on('connection', (ws, req) => {
   // Establish connection for the host.
   if (req.url.startsWith("/host")) {
     hosts[host] = ws;
-    ws.on('close', (event) => {delete hosts[host]});
+    ws.on('close', () => delete hosts[host]);
     ws.on('message', (message) => {
       // Unwrap the message and send to the appropriate clients.
       try { var data = JSON.parse(message); }
@@ -88,7 +89,7 @@ wss.on('connection', (ws, req) => {
       if (!clients[host]) return;
       if (data['client-id'] == 'broadcast')
         Object.values(clients[host]).forEach(
-          (client) => {client.send(JSON.stringify(data))});
+          (client) => client.send(JSON.stringify(data)));
       else if (data['client-id'] in clients[host])
         clients[host][data['client-id']].send(JSON.stringify(data));
     });
@@ -99,13 +100,13 @@ wss.on('connection', (ws, req) => {
     if (!clients[host]) clients[host] = {};
     var connectionNumber = host + '.' + connectionCount++;
     clients[host][connectionNumber] = ws;
-    ws.on('close', (event) => {delete clients[host][connectionNumber]});
+    ws.on('close', () => delete clients[host][connectionNumber]);
     ws.on('message', (message) => {
       if (hosts[host]) {
         // Lace the message so the host knows which client
         // to respond back to.
         try { var data = JSON.parse(message); }
-        catch (e) /*ignore invalid json*/ { return }
+        catch (e) /*ignore invalid json*/ { return; }
         data['client-id'] = `${connectionNumber}`;
         hosts[host].send(JSON.stringify(data));
       }
@@ -116,8 +117,8 @@ wss.on('connection', (ws, req) => {
 // Connect websockets up
 app.get(['/client', '/host'], (req, res) => {
   if (req.headers.upgrade == 'websocket')
-    wss.handleUpgrade(req, req.socket, '', socket => {
-      wss.emit('connection', socket, req)});
+    wss.handleUpgrade(req, req.socket, '', (socket) =>
+      wss.emit('connection', socket, req));
 });
 
 
