@@ -2,7 +2,7 @@
 
 Remote Virtually Connected Computing - A simple, secure, featureful, and fast remote desktop solution which leverages WebRTC, modern media codecs, hardware encoders, and gstreamer. A simple repurposing of already advancing technologies.
 
-[![Demo Video](removid_demo_20210107.gif)
+![Demo Video](removid_demo_20210107.gif)
 
 *Note that, while security is a top priority for this project, it is still in development and would then need full regression tests and a security audit before it could be considered secure in any way. Also note the need for a security audit of the whole dependency chain.*
 
