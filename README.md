@@ -105,7 +105,8 @@ TODO TBC
 |**Shared<br>Access**     | ✔ |   |   |   |   |
 |**Through<br>Port**      | ✘ |   |   |   |   |
 |**Through<br>Router**    | ✔ |   |   |   |   |
-v - virtual only
+
+* v - virtual only
 
 #### Host Security Features
 
