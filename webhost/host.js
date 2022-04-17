@@ -103,28 +103,18 @@ class PeerStream {
   constructor(routerSend, config) {
     this.connection = new RTCPeerConnection(config);
     // Ready the send of ICE Candidate details.
-    this.connection.onicecandidate = ({candidate}) => {
-      if (!candidate) return;
-      routerSend({
-        type: 'ice-candidate',
-        payload: candidate
-      });
-    }
+    this.connection.onicecandidate = ({candidate}) =>
+      routerSend({type: 'ice-candidate', payload: candidate});
     // Ready the send of the Local Description details.
     this.connection.onnegotiationneeded = async () => {
-      try {
-        await this.connection.setLocalDescription(
-          await this.connection.createOffer());
-        routerSend({
-          type: 'offer',
-          payload: this.connection.localDescription
-        });
-      } catch (err) { console.error(err) }
+      await this.connection.setLocalDescription(
+        await this.connection.createOffer());
+      routerSend({type: 'offer', payload: this.connection.localDescription});
     }
   }
 
   // Respond to client messages.
-  async handleMessage(msg) {
+  handleMessage(msg) {
     // Store any sent remote ice candidates.
     if (msg.type == 'ice-candidate')
       this.connection.addIceCandidate(msg.payload || {});

@@ -71,7 +71,7 @@ Example:
     should be registered with a certificate authority or with the client.
 
 --stun-server=[stun server]: Specify a STUN server to use.
-    This is required when the client or host needs to traverse a firewall.
+    This can be ignored unless the client or host needs to traverse a firewall.
 ```
   * remoteVCCkeys:
 ```

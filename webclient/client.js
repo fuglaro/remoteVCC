@@ -20,13 +20,11 @@ if (urlParams.has('accesskey')) {
  **/
 class PeerStream {
   constructor(send, config) {
+    this.send = send;
     this.connection = new RTCPeerConnection(config);
     // Ready send of ICE Candidate details.
-    this.connection.onicecandidate = ({candidate}) => {
-      if (!candidate) return;
+    this.connection.onicecandidate = ({candidate}) =>
       this.send(JSON.stringify({type: 'ice-candidate', payload: candidate}));
-    };
-    this.send = send;
   }
 
   // Respond to host messages.
