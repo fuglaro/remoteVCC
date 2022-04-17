@@ -126,7 +126,7 @@ class PeerStream {
   // Respond to client messages.
   async handleMessage(msg) {
     // Store any sent remote ice candidates.
-    if (msg.type == 'ice_candidate')
+    if (msg.type == 'ice-candidate')
       this.connection.addIceCandidate(msg.payload || {});
     // Store any sent remote descriptions.
     if (msg.type == 'answer')
