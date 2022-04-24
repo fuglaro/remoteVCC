@@ -57,11 +57,12 @@ This establishes the Client <-> Host peer-to-peer WebRTC communication stream ca
 
 ## Access Denied
 
-If connection credetials are invalid, the router, or server, will respond
+If connection credetials are invalid, the router, or host, will respond
 to the client appropriately:
 
 ```json
 {
+    "client-id": "1",
     "type": "denied"
 }
 ```

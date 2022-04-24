@@ -31,7 +31,7 @@ A smarter connection manager is planned which will act as an alternative to the 
 * **Simple Command-Line Tools**:
   * remoteVCChost:
 ```
-Serve a host for clients to connect to.
+Serves a remoteVCC host for clients to connect to.
 
 Example for connecting on a local network:
     remoteVCChost --through-port=43755 --tls-pfx=rVCC.pfx
@@ -41,11 +41,10 @@ Example for connecting over the internet:
 
 --with-login: Allow login sessions on the Host. Must be run as admin. 
 
---via-router=[router url]: Makes a persistent, unique and unguessable host
-    identifier, which is registered with the remoteVCC router, and also
-    printed as a client connection URL for clients to connect via. In some
-    scenarios the router address may be different for the client. Note that
-    the router service needs to be trusted.
+--via-router=[router url]: Connect through a remoteVCC router service via a
+    given URL. If a host identifier is not included in the URL, a persistent
+    and unguessable one will be made. Note that the router service needs to
+    be trusted.
 
 --via-port=[port number]: Listens for client connections on the local network
     through this port. This changes the local network client connection URL

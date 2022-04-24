@@ -8,6 +8,7 @@ var display;
 
 const hostIDEl = document.getElementById('hostID')
 
+
 /**
  * Genereate a cryptographically safe 192bit random key
  * in base64.
@@ -53,7 +54,7 @@ async function connect() {
     } catch (err) {alert(`Could not activate screen:\n${err}`)}
   document.getElementById('display').srcObject = display;
 
-  // Connect up to the routing service..
+  // Connect up to the routing service.
   router = new WebSocket(`wss://${window.location.host}/host?`+
     `host=${encodeURIComponent(hostIDEl.value)}`);
   router.onmessage = async (event) => {
@@ -79,10 +80,9 @@ async function connect() {
         streams[msg['client-id']].connection.addTrack(track, display));
       streams[msg['client-id']].connection.createDataChannel("input")
         .onmessage = getInputHandler();
-    } else if (msg['client-id'] in streams) {
+    } else if (msg['client-id'] in streams)
       // Handle connection establishment negotiation.
       streams[msg['client-id']].handleMessage(msg);
-    }
   }
   router.onopen = async () => {
     // Alert all clients the host is ready in case any have been waiting.
@@ -117,9 +117,9 @@ class PeerStream {
   handleMessage(msg) {
     // Store any sent remote ice candidates.
     if (msg.type == 'ice-candidate')
-      this.connection.addIceCandidate(msg.payload || {});
+      this.connection.addIceCandidate(msg.payload);
     // Store any sent remote descriptions.
-    if (msg.type == 'answer')
+    else if (msg.type == 'answer')
       this.connection.setRemoteDescription(msg.payload);
   }
 }
@@ -162,7 +162,6 @@ function getInputHandler() {
 
     // Display pressed keys on the virtual keyboard
     keyLabel.innerHTML = Array.from(keysDown).join(' ');
-
 
     // Handle pointer events.
     if (data.type == 'motion-warp') {

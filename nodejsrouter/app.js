@@ -83,6 +83,11 @@ wss.on('connection', (ws, req) => {
     hosts[host] = ws;
     ws.on('close', () => delete hosts[host]);
     ws.on('message', (message) => {
+
+
+      console.log(message);
+
+
       // Unwrap the message and send to the appropriate clients.
       try { var data = JSON.parse(message); }
       catch (e) /*ignore invalid json*/ { return }
@@ -102,6 +107,11 @@ wss.on('connection', (ws, req) => {
     clients[host][connectionNumber] = ws;
     ws.on('close', () => delete clients[host][connectionNumber]);
     ws.on('message', (message) => {
+
+
+      console.log(message);
+
+
       if (hosts[host]) {
         // Lace the message so the host knows which client
         // to respond back to.
