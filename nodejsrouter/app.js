@@ -1,5 +1,6 @@
 #!/usr/bin/node
 
+const crypto = require('crypto');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -53,6 +54,15 @@ var tlspfx = fs.readFileSync(path.resolve(TLS_PFX_FILE));
 // Set the current working directory relative to this app.
 process.chdir(__dirname);
 
+/**
+ * Genereate a cryptographically safe 192bit random key
+ * in base64.
+ **/
+function getRandom192bitKey() {
+  var a = new Uint8Array(192/8);
+  crypto.webcrypto.getRandomValues(a);
+  return btoa(String.fromCharCode.apply(null, a)); // base64
+}
 
 /**
  * Webpage service
@@ -72,7 +82,6 @@ app.get('/iceservers', (req, res) =>
  * Routing and WebSocket management.
  */
 const wss = new WebSocket.Server({ noServer: true });
-var connectionCount = 0;
 var hosts = {};
 var clients = {};
 wss.on('connection', (ws, req) => {
@@ -85,7 +94,7 @@ wss.on('connection', (ws, req) => {
     ws.on('message', (message) => {
 
 
-      console.log(message);
+      console.log(message); // TODO remove debugging line
 
 
       // Unwrap the message and send to the appropriate clients.
@@ -103,13 +112,13 @@ wss.on('connection', (ws, req) => {
   // Establish connection for a client.
   else if (req.url.startsWith("/client")) {
     if (!clients[host]) clients[host] = {};
-    var connectionNumber = host + '.' + connectionCount++;
+    var connectionNumber = host + '.' + getRandom192bitKey();
     clients[host][connectionNumber] = ws;
     ws.on('close', () => delete clients[host][connectionNumber]);
     ws.on('message', (message) => {
 
 
-      console.log(message);
+      console.log(message); // TODO remove debugging line
 
 
       if (hosts[host]) {

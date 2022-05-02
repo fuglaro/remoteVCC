@@ -1,6 +1,26 @@
 // Copied from https://github.com/centricular/webrtcsink-custom-signaller/blob/8b42b45c2b73277e300bbae14f5a94cee229c1f4/src/signaller/imp.rs
 // Modified for implementation for RemoteVCC
-// TODO document more scope and role of this module
+//! Manages connection establishement messages between a RemoteVCC router and a webrtcsink.
+//!
+//! This progives a Signaller which manages the WebSocket connections and communication between
+//! a RemoteVCC router and a webrtcsink gstreamer node within a gsreamer pipeline. It is designed
+//! to be extended as a g_object and managed by gstreamer across threads and is therefore built to
+//! be thread safe when given Send and Sync traits.
+//!
+//! This will also spawn its own thread to hold open a WebSocket connection to the RemoteVCC
+//! router to listen for proxied client connection messgages.
+//!
+//! It is the webrtcsink gstreamer node itself that creates and connectes the WebRTC
+//! connections with the clients after sufficient connection establishment messages bave been
+//! funneled through the Signaller. The messaging required is typical of WebRTC connection
+//! establishment messaging and follows the RemoteVCC router messaging protocol.
+//!
+//! If the WebSocket connection to the RemoteVCC router is lost, this will wait a short
+//! moment before attempting a reconnection, while maintaining any already established WebRTC
+//! based Peer-to-Peer connections with a client. Connections that were still in the process
+//! of being connected could resume connection, but are unlikely to if the RemoteVCC router
+//! was restarted, and could end up being a small memory leak.
+
 use async_std::{stream::Stream, task::spawn};
 use async_tungstenite::async_std::connect_async;
 use async_tungstenite::tungstenite::{Error as WSError, Message};
@@ -19,18 +39,30 @@ use std::sync::{Arc, Mutex};
 use webrtcsink::webrtcsink::WebRTCSink;
 use url::Url;
 
-// TODO doc all
-
+/// The state of the Signaller including the connection to the RemoteVCC router,
+/// but not including the state within the webrtcsink gstreamer node itself.
+/// This is intended to be managed within a mutex inside the Signaller, making the overal
+/// state of the Signaller thread safe.
+/// This also includes the functionality for connecting to the RemoteVCC router.
 #[derive(Default)]
 struct State {
-    // TODO doc
+    /// Holds the receiver listening for messages from the RemoteVCC router WebSocket connection.
+    /// This is contained within it's own mutex so that a thread lock can be held specifically on
+    /// this alone, rather than the entire state. This is needed when there is an async wait held
+    /// on listening for further messages, which is long running and would cause a deadlock
+    /// if the thread lock is held on the entire state.
     receiver: Arc<Mutex<Option<Box<dyn Stream<Item=Result<Message, WSError>> + Send + Unpin>>>>,
-    // Sender for websocket messages
+
+    /// Sender for websocket messages
     sender: Option<Box<dyn FnMut(Message) -> () + Send>>,
-    // The URL of the router service to connect through
+ 
+    /// The URL of the router service to connect through. This must be set before calling connect.
     url: String
 }
 impl State {
+    /// Connect, or reconnect, to the RemoteVCC router specified by the url in the State.
+    /// The url must be specified on the State before this method is called.
+    /// This will populate the receiver and the sender of the State for subsequent use.
     pub fn connect(&mut self) -> Result<(), RVCCError> {
         // Connect to the router via WebSocket
         let (wss, _) = match block_on(connect_async(Url::parse(&self.url).unwrap())) {
@@ -52,19 +84,27 @@ impl State {
     }
 }
 
+/// Manages connection establishement messages between a RemoteVCC router and a webrtcsink.
 #[derive(Default)]
 pub struct Signaller {
     state: Arc<Mutex<State>>
 }
-
 impl Signaller {
+    /// Connect to the RemoteVCC Router with the given url.
     pub fn connect(&self, url: &str) -> Result<(), RVCCError> {
         let mut state = self.state.lock().unwrap();
         state.url = url.to_string();
         state.connect()
     }
 
-
+    /// Get ready to receive client connection establishment messages.
+    ///
+    /// Called by the gstreamer pipeline when the webrtcsink node is ready for client connections.
+    /// This will first launch a thread to listen for messages from the router, to pass the
+    /// relevant details to the webrtcsink node. These messages include WebRTC ice-candidates and
+    /// sdp answer messages.
+    /// Once the listener thread is launched, this will then send a message to the router to
+    /// inform all waiting clients that this host is ready for connections. 
     pub fn start(&self, element: &WebRTCSink) {
         // Launch a thread to handle received router messages
         let thread_state = Arc::clone(&self.state);
@@ -74,7 +114,6 @@ impl Signaller {
 
             // Router message handler
             let handle_message = |msg: Message| {
-                eprintln!("{msg}"); // TODO remove debug
                 // Only handle text based messages
                 if !msg.is_text() { return }
 
@@ -83,15 +122,22 @@ impl Signaller {
                 let client_id = data["client-id"].as_str().unwrap_or_default();
                 if client_id == "" { return }
                 match data["type"].as_str() {
+                    // A client wants to start a connection. This will validate access keys (TODO)
+                    // as neccessary before beginning the client connection establishment process.
                     Some("request") => {
                         // TODO - figure out something sensible with access key
-                        // TODO - note security vulm if reconnecting to WS router, and that peerIDs
-                        // can get reused!!! Someone else could pass access key, but still lose
-                        // connection. Should we access key on every message?
+                        // TODO - figure out something sensible with access key
+                        // TODO - figure out something sensible with access key
+                        // TODO - figure out something sensible with access key
+                        // TODO - figure out something sensible with access key
+                        // TODO - figure out something sensible with access key
+                        eprintln!("Client connecting: {client_id}");
                         if let Err(e) = webrtcsink.add_consumer(client_id) {
                             eprintln!("Bad Router Message: couldn't register {}", e)
                         }
                     },
+                    // SDP details provided in response to the SDP details we previously
+                    // offered.
                     Some("answer") => {
                         let sdp = data["payload"]["sdp"].as_str().unwrap_or_default().as_bytes();
                         if let Err(e) = webrtcsink.handle_sdp(
@@ -103,6 +149,8 @@ impl Signaller {
                             eprintln!("Bad Router Message: couldn't handle sdp answer, {}", e)
                         }
                     },
+                    // ICE candidate details provided by the client to help establish a
+                    // peer-to-peer connection.
                     Some("ice-candidate") => {
                         let handle_ice = |candidate: &str|
                             if let Err(e) = webrtcsink.handle_ice(
@@ -147,7 +195,7 @@ impl Signaller {
             // Forever handle all the recieved messages, reconnecting as needed
             loop {
                 {
-                    // Unpack the thread safe receiver not without the full state lock
+                    // Unpack the thread safe receiver without the full state lock
                     let receiver_handle = Arc::clone(&thread_state.lock().unwrap().receiver);
                     let mut receiver = receiver_handle.lock().unwrap();
                     // Handle each recieved message from the router
@@ -172,6 +220,8 @@ impl Signaller {
         }).to_string()));
     }
 
+    /// Inform the client (via the router) of SDP media format options.
+    /// Called by the gstreamer pipeline when the webrtcsink node has SDP options to offer.
     pub fn handle_sdp(&self, _element: &WebRTCSink, peer_id: &str, sdp: &WebRTCSessionDescription) {
         (self.state.lock().unwrap().sender.as_mut().unwrap())(Message::Text(json!({
             "client-id": peer_id.to_string(),
@@ -183,6 +233,9 @@ impl Signaller {
         }).to_string()));
     }
 
+    /// Inform the client (via the router) of ICE candidates details for establishing a
+    /// peer-to-peer connection with the host. Called by the gstreamer pipeline when the
+    /// webrtcsink node has another ICE candidate to offer.
     pub fn handle_ice(&self, _element: &WebRTCSink, peer_id: &str, candidate: &str,
                       sdp_mline_index: Option<u32>, _sdp_mid: Option<String>) {
         (self.state.lock().unwrap().sender.as_mut().unwrap())(Message::Text(json!({
@@ -194,17 +247,11 @@ impl Signaller {
             }
         }).to_string()));
     }
-
-    pub fn stop(&self, _element: &WebRTCSink) {
-    }
-
-    pub fn consumer_removed(&self, _element: &WebRTCSink, _peer_id: &str) {
-    }
 }
 
 #[glib::object_subclass]
 impl ObjectSubclass for Signaller {
-    const NAME: &'static str = "SimpleRTCSinkSignaller";
+    const NAME: &'static str = "RemoteVCCRouterWebRTCSinkSignaller";
     type Type = super::Signaller;
     type ParentType = glib::Object;
 }

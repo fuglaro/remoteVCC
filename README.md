@@ -195,4 +195,4 @@ TODO TBC
 1. Create remotevcchost
 1. Sharing of one window only, but also restricting input events to that window only. Probably want a separate command to remotevcchost
 1. Consider a shared-key encryption of the router messaging and signalling. For full end-to-end encryption through an untrusted router.
-
+1. Consider better deployment of webrtcsink plugin: dev note: export GST_PLUGIN_PATH=$PWD/../../webrtcsink/target/debug:$GST_PLUGIN_PATH
