@@ -1,5 +1,5 @@
 // Copied from https://github.com/centricular/webrtcsink-custom-signaller/blob/8b42b45c2b73277e300bbae14f5a94cee229c1f4/src/signaller/imp.rs
-// Modified for implementation
+// Modified for implementation for RemoteVCC
 // TODO document more scope and role of this module
 use async_std::{stream::Stream, task::spawn};
 use async_tungstenite::async_std::connect_async;
@@ -13,6 +13,7 @@ use gst::subclass::prelude::*;
 use gst_webrtc::{WebRTCSessionDescription, WebRTCSDPType};
 use gst_sdp::sdp_message::SDPMessage;
 use serde_json::{from_str, json, Value};
+use simple_mdns::OneShotMdnsResolver;
 use std::{thread::sleep, time};
 use std::sync::{Arc, Mutex};
 use webrtcsink::webrtcsink::WebRTCSink;
@@ -103,14 +104,40 @@ impl Signaller {
                         }
                     },
                     Some("ice-candidate") => {
-                        if let Err(e) = webrtcsink.handle_ice(
-                            client_id,
-                            Some(data["sdpMLineIndex"].as_u64().unwrap_or_default()
-                                 .try_into().unwrap_or_default()),
-                            Some(data["sdpMid"].as_str().unwrap_or_default().to_string()),
-                            &data["candidate"].as_str().unwrap_or_default().to_string()
-                        ) {
-                            eprintln!("Bad Router Message: couldn't handle ice candidate, {}", e)
+                        let handle_ice = |candidate: &str|
+                            if let Err(e) = webrtcsink.handle_ice(
+                                client_id,
+                                Some(data["payload"]["sdpMLineIndex"].as_u64().unwrap_or_default()
+                                    .try_into().unwrap_or_default()),
+                                None,
+                                candidate
+                            ) {
+                                eprintln!("Bad Router Message: invalid ice candidate, {}", e)
+                            };
+
+                        if let Some(candidate) = data["payload"]["candidate"].as_str() {
+                            handle_ice(&candidate.to_string());
+
+                            // The standard ICE handling called above is usually sufficient
+                            // to register the ICE candidates properly, including IP addresses,
+                            // domain names, and also multicast DNS (mDNS) addresses
+                            // (with recent versions of gst-plugins-bad). Note that modern
+                            // browsers will all typically advertise mDNS addresses to keep
+                            // local IP addresses private. Unfortunately, musl does not support
+                            // mDNS, so musl based OSes with glibc facades will not resolve
+                            // the mDNS candidates. The following resolves any mDNS addresses
+                            // to additionally register the ICE candidates with resolved IPs.
+                            let mut tokens: Vec<&str> = candidate.split(" ").collect();
+                            if let Some(host) = tokens.get(4) {
+                                if host.ends_with(".local") {
+                                    let resolver = OneShotMdnsResolver::new().unwrap();
+                                    if let Ok(Some(answer)) = resolver.query_service_address(host) {
+                                        let host_ip = answer.to_string();
+                                        tokens[4] = host_ip.as_str();
+                                        handle_ice(&tokens.join(" "));
+                                    }
+                                }
+                            }
                         }
                     },
                     v => eprintln!("Bad Router Message: type '{}' not supported", v.unwrap())
@@ -132,7 +159,7 @@ impl Signaller {
                     }
                 }
                 // Try to reconnect to the router
-                sleep(time::Duration::from_millis(1000));
+                sleep(time::Duration::from_secs(1));
                 eprintln!("Attempting reconnection to router...");
                 thread_state.lock().unwrap().connect().unwrap_or_default();
             }
@@ -157,13 +184,12 @@ impl Signaller {
     }
 
     pub fn handle_ice(&self, _element: &WebRTCSink, peer_id: &str, candidate: &str,
-                      sdp_mline_index: Option<u32>, sdp_mid: Option<String>) {
+                      sdp_mline_index: Option<u32>, _sdp_mid: Option<String>) {
         (self.state.lock().unwrap().sender.as_mut().unwrap())(Message::Text(json!({
             "client-id": peer_id.to_string(),
             "type": "ice-candidate",
             "payload": {
                 "candidate": candidate.to_string(),
-                "sdpMid": sdp_mid.unwrap_or_default().to_string(),
                 "sdpMLineIndex": sdp_mline_index.unwrap_or_default()
             }
         }).to_string()));

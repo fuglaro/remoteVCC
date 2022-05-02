@@ -1,27 +1,24 @@
 [package]
-name = "remote_vcc_host"
+name = "remotevcchost"
 version = "0.1.0"
 edition = "2021"
 
-#[[bin]]
-#TODO (needs different-binary-name feature):filename = "remoteVCChost"
-#path = "src/bin/remotevcchost.rs"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-#TODO add system library dependency tracking
-#TODO see if gstreamer plugins can be included too.
-
 [dependencies]
+async-native-tls="0.3.3"
+async-std="1.11.0"
+async-tungstenite={version="0.16.1", features=["async-native-tls"]}
 clap="3.1.9"
 futures="0.3.6"
 futures-util="0.3.21"
 gst={package="gstreamer", version="0.18.7"}
+gst_webrtc={package="gstreamer-webrtc", version="0.18.7"}
+gst_sdp={package="gstreamer-sdp", version="0.18.0"}
+simple-mdns="0.3.9"
 serde={version="1.0.136", features=["derive"]}
 serde_json="1.0.79"
 thiserror="1.0.30"
 tokio={version="1.17.0", features=["macros", "rt"]}
-tokio-tungstenite={version="0.17.1", features=["native-tls"]}
 url="2.2.2"
-webrtcsink="*"
+# TODO - wait for cargo crate or some other packaged release
+webrtcsink = { git = "https://github.com/centricular/webrtcsink.git" }
 websocket="0.26.4"

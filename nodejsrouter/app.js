@@ -21,7 +21,7 @@ process.argv.slice(2).forEach((arg) => {
 even when the Client can't directly access the Host.
 
 Example:
-    remoteVCCrouter --tls-pfx=rVCC.pfx --stun-server=stun.example.org
+    remotevccrouter --tls-pfx=rVCC.pfx --stun-server=stun.example.org
 
 --via-port=[port number] (default:43755): Listens for client and host
     connections through this port.

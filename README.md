@@ -29,15 +29,15 @@ As this is in active development, some features are incomplete. Please see the s
 A smarter connection manager is planned which will act as an alternative to the inbuilt Router. This will allow management of clients and host pools and more advanced authentication systems like OAuth2 and multifactor authentication. The interfaces of the Router is designed to support these capabilities. The connection manager will not be included in this project but rather in a separate project supporting the RemoteVCC Router interface.
 
 * **Simple Command-Line Tools**:
-  * remoteVCChost:
+  * remotevcchost:
 ```
 Serves a remoteVCC host for clients to connect to.
 
 Example for connecting on a local network:
-    remoteVCChost --through-port=43755 --tls-pfx=rVCC.pfx
+    remotevcchost --through-port=43755 --tls-pfx=rVCC.pfx
 
 Example for connecting over the internet:
-    remoteVCChost --through-router=https://remotevcc.convex.cc:43755
+    remotevcchost --through-router=https://remotevcc.convex.cc:43755
 
 --with-login: Allow login sessions on the Host. Must be run as admin. 
 
@@ -54,13 +54,13 @@ Example for connecting over the internet:
     certificate when establishing encrypted communication. The certificate
     should be registered with a certificate authority or with the client.
 ```
-  * remoteVCCrouter:
+  * remotevccrouter:
 ```
 Negotiate connectivity between clients and hosts establishing the streams
 even when the Client can't directly access the Host. 
 
 Example:
-    remoteVCCrouter --tls-pfx=rVCC.pfx
+    remotevccrouter --tls-pfx=rVCC.pfx
 
 --via-port=[port number] (default:43755): Listens for client and host
     connections through this port.
@@ -72,7 +72,7 @@ Example:
 --stun-server=[stun server]: Specify a STUN server to use.
     This can be ignored unless the client or host needs to traverse a firewall.
 ```
-  * remoteVCCkeys:
+  * remotevcckeys:
 ```
 Manage customisable user access keys.
 
@@ -183,16 +183,16 @@ This project aims to find an opportunity for repurposing existing technology to 
 
 
 ## Dependencies
-### remoteVCCrouter
+### remotevccrouter
 * NodeJS
 * npm
   * express
   * ws
-### remoteVCChost
+### remotevcchost
 TODO TBC
 
 ## TODO
-1. Create remoteVCChost
-1. Sharing of one window only, but also restricting input events to that window only. Probably want a separate command to remoteVCChost
+1. Create remotevcchost
+1. Sharing of one window only, but also restricting input events to that window only. Probably want a separate command to remotevcchost
 1. Consider a shared-key encryption of the router messaging and signalling. For full end-to-end encryption through an untrusted router.
 
