@@ -104,7 +104,7 @@ impl Signaller {
     /// relevant details to the webrtcsink node. These messages include WebRTC ice-candidates and
     /// sdp answer messages.
     /// Once the listener thread is launched, this will then send a message to the router to
-    /// inform all waiting clients that this host is ready for connections. 
+    /// inform all waiting clients that this host is ready for connections.
     pub fn start(&self, element: &WebRTCSink) {
         // Launch a thread to handle received router messages
         let thread_state = Arc::clone(&self.state);
